@@ -49,6 +49,7 @@ const AdminDashboardPage = () => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
 
   useEffect(() => {
     loadData();
@@ -74,16 +75,25 @@ const AdminDashboardPage = () => {
     }
   };
 
-  const handleDelete = async (documentId: string) => {
-    if (!confirm("Are you sure you want to delete this document?")) return;
+  const handleDeleteClick = (document: Document) => {
+    setDocumentToDelete(document);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!documentToDelete) return;
 
     try {
-      await adminService.deleteDocument(documentId);
+      await adminService.deleteDocument(documentToDelete.id);
+      setDocumentToDelete(null);
       loadData();
     } catch (error) {
       console.error("Failed to delete document:", error);
       alert("Failed to delete document");
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDocumentToDelete(null);
   };
 
   const handleEdit = async (document: Document) => {
@@ -425,7 +435,7 @@ const AdminDashboardPage = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(doc.id)}
+                          onClick={() => handleDeleteClick(doc)}
                           className="p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-300 hover:scale-110 shadow-md hover:shadow-lg"
                           title="Delete"
                         >
@@ -455,20 +465,67 @@ const AdminDashboardPage = () => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-5 py-2 border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 font-medium"
+                className="px-5 py-2 border-2 border-blue-400 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:shadow-lg transition-all duration-300"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-5 py-2 border border-gray-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 font-medium"
+                className="px-5 py-2 border-2 border-blue-400 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 hover:shadow-lg transition-all duration-300"
               >
                 Next
               </button>
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {documentToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+              <div className="p-6">
+                <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                  <Trash2 className="w-8 h-8 text-red-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                  Confirm Deletion
+                </h3>
+                <p className="text-gray-600 text-center mb-6">
+                  Are you sure you want to delete this document? This action cannot be undone.
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-500 mb-1">Document Type:</p>
+                  <p className="font-semibold text-gray-900">
+                    {documentToDelete.document_type.replace("_", " ").toUpperCase()}
+                  </p>
+                  {documentToDelete.user && (
+                    <>
+                      <p className="text-sm text-gray-500 mb-1 mt-3">User:</p>
+                      <p className="font-semibold text-gray-900">
+                        {documentToDelete.user.name || documentToDelete.user.email}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleDeleteCancel}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 font-medium text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteConfirm}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* View/Edit Modal */}
         {selectedDocument && (

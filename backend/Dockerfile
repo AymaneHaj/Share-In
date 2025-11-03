@@ -13,5 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
+# Expose port
+EXPOSE 5000
+
 # Command to run the application
-CMD gunicorn --bind 0.0.0.0:$PORT app:app
+# Default command for backend service (can be overridden in docker-compose.yml)
+# For local dev, PORT defaults to 5000; Railway will override with env var
+CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 2 --timeout 120 app:app"

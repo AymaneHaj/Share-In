@@ -61,7 +61,9 @@ export const getAllDocuments = async (
 /**
  * Get a single document by ID
  */
-export const getDocumentById = async (documentId: string): Promise<Document> => {
+export const getDocumentById = async (
+  documentId: string
+): Promise<Document> => {
   const response = await api.get(`/api/admin/documents/${documentId}`);
   return response.data;
 };
@@ -87,15 +89,16 @@ export const deleteDocument = async (documentId: string): Promise<void> => {
 /**
  * Get all users
  */
-export const getAllUsers = async (): Promise<Array<{
-  id: string;
-  username: string;
-  email: string;
-  name: string;
-  role: string;
-  created_at: string;
-}>> => {
+export const getAllUsers = async (): Promise<
+  Array<{
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    role: string;
+    created_at: string;
+  }>
+> => {
   const response = await api.get("/api/admin/users");
   return response.data.users;
 };
-

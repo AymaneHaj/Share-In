@@ -24,4 +24,3 @@ def confirm_document_data(document_id): return update_document_data(document_id)
 
 @document_bp.route('/schema', methods=['GET'])
 def field_schema(): return get_field_schema()
-

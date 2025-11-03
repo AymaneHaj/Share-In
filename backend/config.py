@@ -37,13 +37,8 @@ class Config:
     # JWT settings
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-change-in-production'
     JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600))  # 1 hour
-
-
-    # Cookie settings
-    JWT_COOKIE_HTTPONLY = os.environ.get('JWT_COOKIE_HTTPONLY', 'False').lower() == 'true'
-    JWT_COOKIE_SECURE = os.environ.get('JWT_COOKIE_SECURE', 'False').lower() == 'true'
-    JWT_COOKIE_SAMESITE = os.environ.get('JWT_COOKIE_SAMESITE', 'Lax')
-
+    
+    
     # CORS settings
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
 

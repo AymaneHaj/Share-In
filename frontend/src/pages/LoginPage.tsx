@@ -15,9 +15,13 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Find out where to redirect the user after login
-  const from = location.state?.from?.pathname || "/dashboard";
-  const adminFrom = location.state?.from?.pathname || "/admin";
+  // Find out where to redirect the user after login based on role
+  const getRedirectPath = (userRole: string | undefined) => {
+    if (userRole === 'admin') {
+      return '/admin';
+    }
+    return '/dashboard';
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,14 +35,14 @@ const LoginPage: React.FC = () => {
 
     try {
       // PRO: Call the context, not fetch/axios
-      const user = await login(formData.email, formData.password);
+      // login now returns the user object
+      const loggedInUser = await login(formData.email, formData.password);
 
+      // Redirect based on role: admin → /admin, user → /dashboard
+      const redirectPath = getRedirectPath(loggedInUser.role);
+      
       // PRO: Use navigate for SPA redirect, no hard reload
-      if (user.role === "admin") {
-        navigate(adminFrom, { replace: true });
-      } else {
-        navigate(from, { replace: true });
-      }
+      navigate(redirectPath, { replace: true });
     } catch (err: any) {
       // The context re-threw the error
       const errorMessage =
@@ -147,7 +151,7 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
 
-      
+       
       </div>
     </div>
   );

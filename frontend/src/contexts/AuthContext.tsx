@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import type { ReactNode } from "react";
 import * as authService from "../services/authService";
 
@@ -56,11 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // "Smart" Login: Context calls the service
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     try {
       const { user } = await authService.loginUser(email, password);
       setUser(user);
-      return user;
+      return user; // Return user so LoginPage can use it for redirection
     } catch (error) {
       console.error("Login failed in context:", error);
       throw error; // Re-throw error so LoginPage can catch it
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     email: string,
     password: string,
     name: string
-  ) => {
+  ): Promise<User> => {
     try {
       const { user } = await authService.registerUser(
         username,
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         name
       );
       setUser(user);
-      return user;
+      return user; // Return user so RegisterPage can use it for redirection
     } catch (error) {
       console.error("Registration failed in context:", error);
       throw error; // Re-throw error so RegisterPage can catch it

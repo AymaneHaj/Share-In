@@ -86,18 +86,22 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="hidden sm:block px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
-                >
-                  Dashboard
-                </Link>
+                {/* User role: show Dashboard link */}
+                {user?.role === "user" && (
+                  <Link
+                    to="/dashboard"
+                    className="hidden sm:block px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
+                  >
+                    Dashboard
+                  </Link>
+                )}
+                {/* Admin role: show Admin Dashboard link */}
                 {user?.role === "admin" && (
                   <Link
                     to="/admin"
                     className="hidden sm:block px-6 py-2 text-white border border-cyan-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
                   >
-                    Admin
+                    Dashboard
                   </Link>
                 )}
                 <button
@@ -111,7 +115,7 @@ const Header: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="hidden sm:block px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
+                  className="px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
                 >
                   Login
                 </Link>

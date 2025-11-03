@@ -59,4 +59,3 @@ def admin_required(f):
             return jsonify({'error': str(e)}), 401
     
     return decorated_function
-

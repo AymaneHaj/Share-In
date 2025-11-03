@@ -10,23 +10,19 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
     set_access_cookies,
-    unset_jwt_cookies  
+    unset_jwt_cookies 
 )
 from models import User
 
 def register():
     """Register a new user"""
     try:
-        print("Content-Type:", request.headers.get('Content-Type'))  # Debug log
-        print("Raw data:", request.get_data())  # Debug log
         data = request.get_json()
-        print(f"Registration attempt with data: {data}")  # Debug log
         
         # Validate required fields
         required_fields = ['username', 'email', 'password', 'name']
         for field in required_fields:
             if not data.get(field):
-                print(f"Missing required field: {field}")  # Debug log
                 return jsonify({'error': f'{field} is required'}), 400
         
         # Check if user already exists
@@ -64,9 +60,6 @@ def register():
         }), 201
         
     except Exception as e:
-        import traceback
-        print(f"Registration error: {str(e)}")
-        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 def login():

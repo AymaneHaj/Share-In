@@ -410,12 +410,11 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                {/* CIN: Separate images (recto required, verso optional) */}
+                {/* All document types: recto required, verso optional */}
                 <div>
                   <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm text-blue-700 font-medium">
-                      Upload Recto (Front) image - required. Verso (Back) image
-                      is optional.
+                      Upload Recto (Front) image - required. Verso (Back) image is optional for all document types.
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

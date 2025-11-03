@@ -35,4 +35,3 @@ def admin_delete_document(document_id): return delete_admin_document(document_id
 @admin_bp.route('/users', methods=['GET'])
 @admin_required
 def admin_all_users(): return get_all_users()
-

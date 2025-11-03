@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 // Hero Component
 const Hero: React.FC = () => {
@@ -170,9 +171,12 @@ const FeaturesSection: React.FC = () => {
                         <p className="text-purple-200 text-lg mb-8 max-w-2xl mx-auto">
                             Join thousands of businesses streamlining their document processing workflow
                         </p>
-                        <button className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white px-10 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-cyan-500/50">
+                        <Link 
+                            to="/register"
+                            className="inline-block bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white px-10 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-cyan-500/50"
+                        >
                             Start Free Trial
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>

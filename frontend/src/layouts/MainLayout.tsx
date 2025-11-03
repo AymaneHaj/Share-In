@@ -14,12 +14,20 @@ interface MainLayoutProps {
 const DashboardHeader: React.FC = () => {
   const { user, logout } = useAuth();
 
+  // Determine dashboard path based on user role
+  const getDashboardPath = () => {
+    if (user?.role === 'admin') {
+      return '/admin';
+    }
+    return '/dashboard';
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-slate-200">
       <nav className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/dashboard" className="flex items-center gap-2 group">
+          {/* Logo - redirects to appropriate dashboard based on role */}
+          <Link to={getDashboardPath()} className="flex items-center gap-2 group">
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/50">
               <svg
                 className="w-6 h-6 text-white"

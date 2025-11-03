@@ -1,45 +1,155 @@
 // src/pages/RegisterPage.tsx
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { UserPlus, Lock, Mail, User } from "lucide-react";
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
-    username: "",
+    // username: "", // <-- REMOVED
     email: "",
     password: "",
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const { register } = useAuth(); // Get the "smart" register function
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    if (error) setError("");
+  // Redirect based on role after registration
+  const getRedirectPath = (userRole: string | undefined) => {
+    if (userRole === 'admin') {
+      return '/admin';
+    }
+    return '/dashboard';
   };
 
-  const validateForm = () => {
-    if (
-      !formData.name ||
-      !formData.username ||
-      !formData.email ||
-      !formData.password
-    ) {
-      setError("All fields are required");
-      return false;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const newFormData = {
+      ...formData,
+      [name]: value,
+    };
+    setFormData(newFormData);
+    
+    // Clear general error
+    if (error) setError("");
+    
+    // Validate field in real-time with updated form data
+    const fieldError = validateField(name, value, newFormData);
+    const newFieldErrors = {
+      ...fieldErrors,
+      [name]: fieldError,
+    };
+    
+    // If password changed, re-validate confirmPassword
+    if (name === "password" && newFormData.confirmPassword) {
+      if (value !== newFormData.confirmPassword) {
+        newFieldErrors.confirmPassword = "Passwords do not match";
+      } else {
+        delete newFieldErrors.confirmPassword;
+      }
     }
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return false;
+    
+    // If confirmPassword changed, validate it
+    if (name === "confirmPassword" && newFormData.password) {
+      if (value !== newFormData.password) {
+        newFieldErrors.confirmPassword = "Passwords do not match";
+      } else {
+        delete newFieldErrors.confirmPassword;
+      }
     }
-    return true;
+    
+    setFieldErrors(newFieldErrors);
+  };
+  
+  const validateField = (name: string, value: string, currentFormData = formData): string | undefined => {
+    if (!value.trim() && name !== "password" && name !== "confirmPassword") {
+      return `${name === "confirmPassword" ? "Confirm Password" : name.charAt(0).toUpperCase() + name.slice(1)} is required`;
+    }
+    
+    if (name === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return "Please enter a valid email address";
+      }
+    }
+    
+    if (name === "password") {
+      if (!value) {
+        return "Password is required";
+      }
+      if (value.length < 6) {
+        return "Password must be at least 6 characters";
+      }
+    }
+    
+    if (name === "confirmPassword") {
+      if (!value) {
+        return "Please confirm your password";
+      }
+      if (value !== currentFormData.password) {
+        return "Passwords do not match";
+      }
+    }
+    
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    // Check all required fields
+    const errors: typeof fieldErrors = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = "Name is required";
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      }
+    }
+    
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+    
+    setFieldErrors(errors);
+    
+    // Return true if no errors
+    return Object.keys(errors).length === 0;
+  };
+  
+  // Check if form is valid (for button disabled state)
+  const isFormValid = (): boolean => {
+    return (
+      formData.name.trim() !== "" &&
+      formData.email.trim() !== "" &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+      formData.password.length >= 6 &&
+      formData.confirmPassword !== "" &&
+      formData.password === formData.confirmPassword &&
+      Object.keys(fieldErrors).length === 0
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,16 +160,22 @@ const RegisterPage: React.FC = () => {
 
     try {
       // PRO: Call the context, not fetch/axios
-      await register(
-        formData.username,
+      // register now returns the user object
+      // Note: register expects (username, email, password, name)
+      // We use email as username since username field is removed
+      const registeredUser = await register(
+        formData.email, // Use email as username
         formData.email,
         formData.password,
         formData.name
       );
 
+      // Redirect based on role: admin → /admin, user → /dashboard
+      const redirectPath = getRedirectPath(registeredUser.role);
+      
       // PRO: Use navigate for SPA redirect
-      navigate("/dashboard");
-    } catch (err) {
+      navigate(redirectPath, { replace: true });
+    } catch (err: any) {
       let errorMessage = "Registration failed. Please try again.";
       if (
         typeof err === "object" &&
@@ -103,7 +219,7 @@ const RegisterPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ... (Full Form JSX: Name, Username, Email, Password, Confirm) ... */}
+            {/* ... (Full Form JSX: Name, Email, Password, Confirm) ... */}
             <div>
               <label
                 htmlFor="name"
@@ -111,36 +227,28 @@ const RegisterPage: React.FC = () => {
               >
                 Full Name
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
-                placeholder="e.g. Fatima Zahra"
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3.5 w-5 h-5 text-purple-300" />
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all ${
+                    fieldErrors.name ? "border-red-500/50" : "border-white/20"
+                  }`}
+                  placeholder="e.g. Fatima Zahra"
+                />
+              </div>
+              {fieldErrors.name && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.name}</p>
+              )}
             </div>
-            {/* ... (Other inputs: username, email, password, confirmPassword) ... */}
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-purple-200 mb-2"
-              >
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
-                placeholder="e.g. fatimazahra"
-              />
-            </div>
+
+            {/* ... (Username input REMOVED) ... */}
+
             <div>
               <label
                 htmlFor="email"
@@ -148,16 +256,24 @@ const RegisterPage: React.FC = () => {
               >
                 Email Address
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
-                placeholder="e.g. fatimazahra@example.com"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-3.5 w-5 h-5 text-purple-300" />
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all ${
+                    fieldErrors.email ? "border-red-500/50" : "border-white/20"
+                  }`}
+                  placeholder="e.g. fatimazahra@example.com"
+                />
+              </div>
+              {fieldErrors.email && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.email}</p>
+              )}
             </div>
             <div>
               <label
@@ -166,16 +282,24 @@ const RegisterPage: React.FC = () => {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-purple-300" />
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all ${
+                    fieldErrors.password ? "border-red-500/50" : "border-white/20"
+                  }`}
+                  placeholder="••••••••"
+                />
+              </div>
+              {fieldErrors.password && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.password}</p>
+              )}
             </div>
             <div>
               <label
@@ -184,35 +308,57 @@ const RegisterPage: React.FC = () => {
               >
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-purple-300" />
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`w-full pl-10 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all ${
+                    fieldErrors.confirmPassword ? "border-red-500/50" : "border-white/20"
+                  }`}
+                  placeholder="••••••••"
+                />
+              </div>
+              {fieldErrors.confirmPassword && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-cyan-500 h-12 to-purple-600 ..."
+              disabled={isLoading || !isFormValid()}
+              className="w-full bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-500 disabled:to-gray-600 text-white py-3 rounded-lg font-semibold transition-all shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-cyan-500/50 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
-                  {/* ... (Spinner JSX) ... */}
+                  <div className="animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full" />
                   Creating account...
                 </>
               ) : (
-                "Sign Up"
+                <>
+                  <UserPlus className="w-5 h-5" />
+                  Sign Up
+                </>
               )}
             </button>
           </form>
 
           {/* ... (Rest of the JSX: Divider, "Already have an account?") ... */}
+          <div className="text-center mt-6">
+            <p className="text-purple-200">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

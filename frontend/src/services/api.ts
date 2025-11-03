@@ -1,13 +1,14 @@
-// src/services/api.ts
 import axios from "axios";
+// We assume config.ts is at src/config/config.ts
+// The path from src/services/ is ../config/config.ts
 import { API_BASE_URL } from "../config/config";
 
-// 1. Create the central Axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL
+  baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
-// 2. Request Interceptor (Adds the token)
+// Request Interceptor to add the auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
@@ -21,17 +22,15 @@ api.interceptors.request.use(
   }
 );
 
-// 3. Response Interceptor (Handles 401 Unauthorized)
+// Response Interceptor to handle 401 errors
 api.interceptors.response.use(
   (response) => response, // Pass through successful responses
   (error) => {
     // Check if the error is a 401
     if (error.response && error.response.status === 401) {
-      // Token is invalid or expired
-      console.error("Unauthorized. Token expired or invalid. Logging out.");
+      console.error("Unauthorized. Logging out.");
       localStorage.removeItem("access_token");
       localStorage.removeItem("user");
-
       // Force reload to login page to clear all app state
       window.location.href = "/login";
     }

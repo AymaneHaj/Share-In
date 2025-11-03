@@ -42,17 +42,33 @@ def create_document():
         if not user: return jsonify({'error': 'User not authenticated'}), 401
         
         document_type = request.form.get('document_type')
+        
+        if not document_type:
+            return jsonify({'error': 'document_type is required'}), 400
+        
+        # Validate document type
+        valid_types = ['cin', 'driving_license', 'vehicle_registration']
+        if document_type not in valid_types:
+            return jsonify({
+                'error': f'Invalid document_type. Must be one of: {", ".join(valid_types)}'
+            }), 400
+        
         upload_folder = f"uploads/{user.id}/{document_type}"
 
         cloud_url_recto = None
         cloud_url_verso = None
         original_filename = ""
 
-        # CIN: Separate images mode - recto required, verso optional
+        # All document types: recto required, verso optional
+        # Check for recto file (required)
         if 'file_recto' not in request.files:
-            return jsonify({'error': 'Recto (Front) file is required'}), 400
-        
-        file_recto = request.files['file_recto']
+            # Fallback: accept 'file' for backward compatibility
+            if 'file' in request.files:
+                file_recto = request.files['file']
+            else:
+                return jsonify({'error': 'Recto (Front) file is required'}), 400
+        else:
+            file_recto = request.files['file_recto']
         
         if not file_recto or file_recto.filename == '':
             return jsonify({'error': 'Recto (Front) file is required'}), 400
@@ -64,7 +80,8 @@ def create_document():
         if not cloud_url_recto:
             return jsonify({'error': 'Cloudinary upload failed for recto file'}), 500
         
-        # Verso is optional
+        # Verso is optional for all document types
+        cloud_url_verso = None
         if 'file_verso' in request.files:
             file_verso = request.files['file_verso']
             if file_verso and file_verso.filename != '':
@@ -84,7 +101,7 @@ def create_document():
             # No verso file provided - that's fine, it's optional
             original_filename = file_recto.filename
             cloud_url_verso = None
-    
+
         # --- Create document in DB ---
         document = Document(
             document_type=document_type,

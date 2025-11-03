@@ -202,4 +202,3 @@ def get_all_users():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

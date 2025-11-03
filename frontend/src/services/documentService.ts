@@ -1,9 +1,9 @@
-// src/services/documentService.ts
 import api from "./api";
 
 // This interface should match the backend response
 export interface DocumentResult {
   id: string;
+  document_id?: string; // Handle both id and document_id
   document_type: string;
   status: string;
   original_filename: string;
@@ -14,7 +14,7 @@ export interface DocumentResult {
   completed_at?: string | null;
   extracted_data?: any;
   error_messages?: string[];
-  [key: string]: any; // Allow other properties
+  [key: string]: any;
 }
 
 interface ConfirmResponse {
@@ -23,17 +23,14 @@ interface ConfirmResponse {
 }
 
 /**
- * Uploads a document. The interceptor will add the auth token.
+ * Uploads a document (FormData). Interceptor adds token.
  */
 export const uploadDocument = async (
   formData: FormData
 ): Promise<DocumentResult> => {
-  const response = await api.post("/api/documents/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  // The backend returns the document object directly on this route
+  // The backend endpoint is /api/documents/upload
+  // Don't set Content-Type manually - axios will set it automatically with boundary for FormData
+  const response = await api.post("/api/documents/upload", formData);
   return response.data;
 };
 
@@ -43,6 +40,7 @@ export const uploadDocument = async (
 export const getDocument = async (
   documentId: string
 ): Promise<DocumentResult> => {
+  // The backend endpoint is /api/documents/<id>
   const response = await api.get(`/api/documents/${documentId}`);
   return response.data;
 };
@@ -54,6 +52,7 @@ export const confirmDocument = async (
   documentId: string,
   validatedData: any
 ): Promise<ConfirmResponse> => {
+  // The backend endpoint is /api/documents/<id>/confirm
   const response = await api.put(
     `/api/documents/${documentId}/confirm`,
     validatedData
@@ -65,6 +64,7 @@ export const confirmDocument = async (
  * Fetches the field schema from the backend.
  */
 export const getFieldSchema = async (): Promise<any> => {
+  // The backend endpoint is /api/documents/schema
   const response = await api.get("/api/documents/schema");
   return response.data;
 };
