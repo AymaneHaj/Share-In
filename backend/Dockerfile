@@ -17,6 +17,6 @@ COPY . .
 EXPOSE 5000
 
 # Command to run the application
-# Default command for backend service (can be overridden in docker-compose.yml)
-# For local dev, PORT defaults to 5000; Railway will override with env var
-CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 2 --timeout 120 app:app"
+# Railway will set PORT automatically, default to 5000 for local dev
+# Use gunicorn for production (Railway), fallback to waitress for compatibility
+CMD sh -c "if [ -n \"\$PORT\" ]; then gunicorn --bind 0.0.0.0:\$PORT --workers 2 --threads 2 --timeout 120 app:app; else waitress-serve --host=0.0.0.0 --port=5000 app:app; fi"
