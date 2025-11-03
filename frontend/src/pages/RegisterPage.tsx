@@ -45,16 +45,26 @@ const RegisterPage: React.FC = () => {
     
     // Validate field in real-time with updated form data
     const fieldError = validateField(name, value, newFormData);
-    const newFieldErrors = {
-      ...fieldErrors,
-      [name]: fieldError,
-    };
+    const newFieldErrors: typeof fieldErrors = {};
+    
+    // Copy existing errors (except for the current field)
+    Object.keys(fieldErrors).forEach(key => {
+      if (key !== name && fieldErrors[key as keyof typeof fieldErrors]) {
+        newFieldErrors[key as keyof typeof fieldErrors] = fieldErrors[key as keyof typeof fieldErrors];
+      }
+    });
+    
+    // Add error for current field only if it exists
+    if (fieldError) {
+      newFieldErrors[name as keyof typeof fieldErrors] = fieldError;
+    }
     
     // If password changed, re-validate confirmPassword
     if (name === "password" && newFormData.confirmPassword) {
       if (value !== newFormData.confirmPassword) {
         newFieldErrors.confirmPassword = "Passwords do not match";
       } else {
+        // Remove the error if passwords now match
         delete newFieldErrors.confirmPassword;
       }
     }
@@ -64,6 +74,7 @@ const RegisterPage: React.FC = () => {
       if (value !== newFormData.password) {
         newFieldErrors.confirmPassword = "Passwords do not match";
       } else {
+        // Remove the error if passwords now match
         delete newFieldErrors.confirmPassword;
       }
     }
@@ -141,15 +152,26 @@ const RegisterPage: React.FC = () => {
   
   // Check if form is valid (for button disabled state)
   const isFormValid = (): boolean => {
-    return (
+    // Check if all required fields are filled
+    const hasAllFields = 
       formData.name.trim() !== "" &&
       formData.email.trim() !== "" &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
-      formData.password.length >= 6 &&
-      formData.confirmPassword !== "" &&
-      formData.password === formData.confirmPassword &&
-      Object.keys(fieldErrors).length === 0
-    );
+      formData.password !== "" &&
+      formData.confirmPassword !== "";
+    
+    // Check if email format is valid
+    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    
+    // Check if password meets requirements
+    const isPasswordValid = formData.password.length >= 6;
+    
+    // Check if passwords match
+    const doPasswordsMatch = formData.password === formData.confirmPassword;
+    
+    // Check if there are any field errors (only count errors that are actual strings)
+    const hasFieldErrors = Object.values(fieldErrors).some(error => error && error.trim() !== "");
+    
+    return hasAllFields && isEmailValid && isPasswordValid && doPasswordsMatch && !hasFieldErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
