@@ -3,7 +3,7 @@
 # Custom Nginx configuration to serve the Vue.js application
 # and proxy API requests to the backend server
 server {
-    listen 80;
+    listen ${PORT};
     server_name localhost;
 
 # Serve static files
