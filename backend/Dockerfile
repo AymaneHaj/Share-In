@@ -19,4 +19,4 @@ EXPOSE 5000
 # Command to run the application
 # Railway will set PORT automatically, default to 5000 for local dev
 # Use gunicorn for production (Railway), fallback to waitress for compatibility
-CMD sh -c "if [ -n \"\$PORT\" ]; then gunicorn --bind 0.0.0.0:\$PORT --workers 2 --threads 2 --timeout 120 app:app; else waitress-serve --host=0.0.0.0 --port=5000 app:app; fi"
+CMD sh -c "if [ -n \"\$PORT\" ]; then gunicorn --bind 0.0.0.0:\$PORT --workers 1 --threads 4 --timeout 120 app:app; else waitress-serve --host=0.0.0.0 --port=5000 app:app; fi"
