@@ -23,7 +23,7 @@ import heic2any from "heic2any";
 
 // --- Interfaces ---
 
-// Types for field schema (FIXED from 'any')
+// Types for field schema
 interface SchemaField {
   key: string;
   label: string;
@@ -39,7 +39,7 @@ interface DocumentType {
   id: "cin" | "driving_license" | "vehicle_registration";
   title: string;
   description: string;
-  icon: ComponentType<LucideProps>; // FIXED: Changed from React.ReactNode
+  icon: ComponentType<LucideProps>;
   gradient: string;
   shadowColor: string;
 }
@@ -67,7 +67,7 @@ const DashboardPage: React.FC = () => {
     null
   );
 
-  // File states - used for other document types (RESPECTING USER'S ORIGINAL LOGIC)
+  // File states - used for other document types
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -81,7 +81,7 @@ const DashboardPage: React.FC = () => {
   const [isDraggingVerso, setIsDraggingVerso] = useState(false);
 
   // PRO: State for the dynamic schema, fetched from backend
-  const [fieldSchema, setFieldSchema] = useState<SchemaData>({}); // FIXED: Use SchemaData type
+  const [fieldSchema, setFieldSchema] = useState<SchemaData>({});
 
   // --- PRO: Load the schema from the backend on page load ---
   useEffect(() => {
@@ -121,7 +121,7 @@ const DashboardPage: React.FC = () => {
         try {
           console.log(`Polling for document status: ${documentId}`);
 
-          // PRO: Call the service (no fetch, no token)
+          // PRO: Call the service
           const documentData = await documentService.getDocument(documentId);
 
           if (
@@ -132,7 +132,6 @@ const DashboardPage: React.FC = () => {
             setUploadResult(documentData); // Update with final data
           } else if (documentData.status === "processing") {
             // Update status if it changed from 'pending'
-            // FIXED: Check if prev exists before spreading
             setUploadResult((prev) =>
               prev ? { ...prev, status: "processing" } : null
             );
@@ -163,7 +162,7 @@ const DashboardPage: React.FC = () => {
     }
   }, [uploadResult?.status, uploadResult?.extracted_data, editableData]);
 
-  // --- Static UI Data (FIXED Descriptions) ---
+  // --- Static UI Data ---
   const documentTypes: DocumentType[] = [
     {
       id: "cin",
@@ -300,7 +299,7 @@ const DashboardPage: React.FC = () => {
   ) => {
     setError("");
     if (e.target.files && e.target.files[0]) {
-      await processFile(e.target.files[0], side); // Make it async
+      await processFile(e.target.files[0], side);
     }
     e.target.value = "";
   };
@@ -316,7 +315,7 @@ const DashboardPage: React.FC = () => {
     else setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      await processFile(e.dataTransfer.files[0], side); // Make it async
+      await processFile(e.dataTransfer.files[0], side);
     }
   };
 
@@ -407,7 +406,7 @@ const DashboardPage: React.FC = () => {
     }
 
     try {
-      // PRO: Call the service, no fetch, no token
+      // PRO: Call the service
       const data = await documentService.uploadDocument(formData);
       setUploadResult(data);
     } catch (err: any) {
@@ -484,16 +483,16 @@ const DashboardPage: React.FC = () => {
             <button
               key={type.id}
               onClick={() => startNewWith(type.id)}
-              className={`bg-white rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${selectedType === type.id
+              className={`bg-white rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                selectedType === type.id
                   ? "ring-4 ring-cyan-400 shadow-lg"
                   : "shadow-md hover:shadow-lg border border-transparent"
-                }`}
+              }`}
             >
               <div className="flex flex-col items-center text-center">
                 <div
                   className={`w-20 h-20 bg-gradient-to-br ${type.gradient} rounded-2xl flex items-center justify-center mb-4 shadow-lg ${type.shadowColor}`}
                 >
-                  {/* FIXED: Use React.createElement for icon */}
                   <div className="text-white">
                     {React.createElement(type.icon, { className: "w-10 h-10" })}
                   </div>
@@ -522,7 +521,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* NEW: Show HEIC converting message */}
+                {/* Show HEIC converting message */}
                 {isConverting && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-center">
                     <div className="flex items-center justify-center gap-3">
@@ -550,16 +549,17 @@ const DashboardPage: React.FC = () => {
                         onDragOver={(e) => handleDragOver(e, "recto")}
                         onDragLeave={(e) => handleDragLeave(e, "recto")}
                         onDrop={(e) => handleDrop(e, "recto")}
-                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDraggingRecto
+                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                          isDraggingRecto
                             ? "border-cyan-500 bg-cyan-50"
                             : uploadedFileRecto
-                              ? "border-green-400 bg-green-50"
-                              : "border-slate-300 hover:border-cyan-400"
-                          }`}
+                            ? "border-green-400 bg-green-50"
+                            : "border-slate-300 hover:border-cyan-400"
+                        }`}
                       >
                         <input
                           type="file"
-                          accept="image/*,.heic,.heif" // Accept HEIC
+                          accept="image/*,.heic,.heif"
                           onChange={(e) => handleFileSelect(e, "recto")}
                           className="hidden"
                           id="file-upload-recto"
@@ -596,16 +596,17 @@ const DashboardPage: React.FC = () => {
                         onDragOver={(e) => handleDragOver(e, "verso")}
                         onDragLeave={(e) => handleDragLeave(e, "verso")}
                         onDrop={(e) => handleDrop(e, "verso")}
-                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDraggingVerso
+                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                          isDraggingVerso
                             ? "border-purple-500 bg-purple-50"
                             : uploadedFileVerso
-                              ? "border-green-400 bg-green-50"
-                              : "border-slate-300 hover:border-purple-400"
-                          }`}
+                            ? "border-green-400 bg-green-50"
+                            : "border-slate-300 hover:border-purple-400"
+                        }`}
                       >
                         <input
                           type="file"
-                          accept="image/*,.heic,.heif" // Accept HEIC
+                          accept="image/*,.heic,.heif"
                           onChange={(e) => handleFileSelect(e, "verso")}
                           className="hidden"
                           id="file-upload-verso"
@@ -647,16 +648,17 @@ const DashboardPage: React.FC = () => {
                     onDragOver={(e) => handleDragOver(e, "single")}
                     onDragLeave={(e) => handleDragLeave(e, "single")}
                     onDrop={(e) => handleDrop(e, "single")}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDragging
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                      isDragging
                         ? "border-cyan-500 bg-cyan-50"
                         : uploadedFile
-                          ? "border-green-400 bg-green-50"
-                          : "border-slate-300 hover:border-cyan-400 hover:bg-slate-50"
-                      }`}
+                        ? "border-green-400 bg-green-50"
+                        : "border-slate-300 hover:border-cyan-400 hover:bg-slate-50"
+                    }`}
                   >
                     <input
                       type="file"
-                      accept="image/*,.heic,.heif" // Accept HEIC
+                      accept="image/*,.heic,.heif"
                       onChange={(e) => handleFileSelect(e, "single")}
                       className="hidden"
                       id="file-upload"
@@ -692,40 +694,40 @@ const DashboardPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Upload Button (RESPECTING USER'S LOGIC) */}
+                {/* Upload Button */}
                 {((selectedType === "cin" && uploadedFileRecto) ||
                   (selectedType !== "cin" && uploadedFile)) && (
-                    <div className="flex gap-4 justify-center mt-6">
-                      <button
-                        onClick={handleUpload}
-                        disabled={isUploading || isConverting} // Disable if converting
-                        className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        {isUploading ? (
-                          <>
-                            <Loader2 className="animate-spin h-5 w-5" />
-                            Processing...
-                          </>
-                        ) : isConverting ? (
-                          <>
-                            <Loader2 className="animate-spin h-5 w-5" />
-                            Converting...
-                          </>
-                        ) : (
-                          <>
-                            <ArrowRight className="w-5 h-5" />
-                            Process Document
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={resetUpload}
-                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-4 justify-center mt-6">
+                    <button
+                      onClick={handleUpload}
+                      disabled={isUploading || isConverting}
+                      className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="animate-spin h-5 w-5" />
+                          Processing...
+                        </>
+                      ) : isConverting ? (
+                        <>
+                          <Loader2 className="animate-spin h-5 w-5" />
+                          Converting...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="w-5 h-5" />
+                          Process Document
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={resetUpload}
+                      className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               /* STATE 2: We have an upload result (pending, completed, etc.) */
@@ -746,16 +748,16 @@ const DashboardPage: React.FC = () => {
                 {/* CASE 2A: document is running */}
                 {(uploadResult.status === "pending" ||
                   uploadResult.status === "processing") && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
-                        <p className="text-blue-700 text-sm font-medium">
-                          Document is {uploadResult.status}... Checking for
-                          results automatically.
-                        </p>
-                      </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
+                      <p className="text-blue-700 text-sm font-medium">
+                        Document is {uploadResult.status}... Checking for
+                        results automatically.
+                      </p>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* CASE 2B: document failed */}
                 {uploadResult.status === "failed" && (
@@ -811,7 +813,6 @@ const DashboardPage: React.FC = () => {
                                 {group.title}
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* FIXED: Added types for key/label */}
                                 {group.fields.map(({ key, label }: SchemaField) => (
                                   <div key={key} className="group">
                                     <label
@@ -879,7 +880,6 @@ const DashboardPage: React.FC = () => {
                             <span
                               className={`inline-flex w-10 h-10 rounded-lg bg-gradient-to-br ${type.gradient} text-white items-center justify-center shadow-md`}
                             >
-                              {/* FIXED: Use React.createElement */}
                               {React.createElement(type.icon, {
                                 className: "w-6 h-6",
                               })}
