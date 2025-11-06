@@ -31,6 +31,8 @@ class Config:
         'svg', 'ico', 'heic', 'heif',         # Additional formats
         'avif', 'jp2', 'j2k', 'jpx'           # Modern formats
     }
+    # Maximum file size for uploads (20MB)
+    MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20MB in bytes
     
     # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'

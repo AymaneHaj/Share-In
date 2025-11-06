@@ -6,6 +6,10 @@ server {
     listen ${PORT};
     server_name localhost;
 
+    # Allow large file uploads (up to 20MB)
+    client_max_body_size 20M;
+    client_body_buffer_size 20M;
+
 # Serve static files
     location / {
         root   /usr/share/nginx/html;
@@ -19,8 +23,15 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_connect_timeout 120s;
-        proxy_send_timeout    120s;
-        proxy_read_timeout    120s;
+        
+        # Timeouts for large file uploads
+        proxy_connect_timeout 300s;
+        proxy_send_timeout    300s;
+        proxy_read_timeout    300s;
+        
+        # Buffer settings for large uploads
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_max_temp_file_size 0;
     }
 }
