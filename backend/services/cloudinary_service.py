@@ -49,7 +49,6 @@ def upload_to_cloudinary(file_to_upload, folder="document_uploads"):
             file_to_upload,
             folder=folder,
             resource_type="image",  # Explicitly set as image to support all image formats
-            format="auto",  # Let Cloudinary optimize the format
             flags="immutable_cache"  # Cache optimization
         )
         
