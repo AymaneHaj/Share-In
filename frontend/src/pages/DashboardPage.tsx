@@ -198,20 +198,47 @@ const DashboardPage: React.FC = () => {
   ) => {
     if (!file) return;
 
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setError(`File is too large. Maximum size is 10MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+      return;
+    }
+
     let processedFile = file;
     const fileName = file.name.toLowerCase();
 
-    // Check if it's HEIC/HEIF
-    if (fileName.endsWith(".heic") || fileName.endsWith(".heif")) {
+    // Check if it's HEIC/HEIF (by extension or MIME type)
+    const isHeic = fileName.endsWith(".heic") || 
+                   fileName.endsWith(".heif") ||
+                   file.type === "image/heic" ||
+                   file.type === "image/heif" ||
+                   file.type === "image/heif-sequence";
+    
+    if (isHeic) {
       setIsConverting(true);
       setError("");
       try {
-        // Convert it to JPEG
-        const convertedBlob = (await heic2any({
+        // Convert it to JPEG - heic2any can return a Blob or an array of Blobs
+        const conversionResult = await heic2any({
           blob: file,
           toType: "image/jpeg",
           quality: 0.8,
-        })) as Blob;
+        });
+
+        // Handle both single Blob and array of Blobs
+        let convertedBlob: Blob;
+        if (Array.isArray(conversionResult)) {
+          // If array, take the first blob
+          convertedBlob = conversionResult[0] as Blob;
+        } else {
+          convertedBlob = conversionResult as Blob;
+        }
+
+        // Verify the conversion succeeded
+        if (!convertedBlob || !(convertedBlob instanceof Blob)) {
+          throw new Error("Conversion returned invalid result");
+        }
 
         // Create a new File object
         processedFile = new File(
@@ -222,10 +249,15 @@ const DashboardPage: React.FC = () => {
             lastModified: new Date().getTime(),
           }
         );
+
+        // Verify the file was created successfully
+        if (!processedFile || processedFile.size === 0) {
+          throw new Error("Converted file is empty");
+        }
       } catch (err) {
         console.error("HEIC conversion failed:", err);
         setError(
-          "Failed to convert HEIC image. Please try a JPEG or PNG."
+          "Failed to convert HEIC image. Please try converting it to JPEG or PNG first, or use a different image format."
         );
         setIsConverting(false);
         return; // Stop processing
@@ -242,6 +274,9 @@ const DashboardPage: React.FC = () => {
 
     // Set state based on side
     const reader = new FileReader();
+    reader.onerror = () => {
+      setError("Failed to read the image file. Please try again.");
+    };
     reader.onloadend = () => {
       const result = reader.result as string;
       if (side === "recto") {
@@ -376,7 +411,27 @@ const DashboardPage: React.FC = () => {
       const data = await documentService.uploadDocument(formData);
       setUploadResult(data);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Upload failed. Please try again.");
+      console.error("Upload error:", err);
+      
+      // Provide more specific error messages
+      let errorMessage = "Upload failed. Please try again.";
+      
+      if (err.response) {
+        // Server responded with an error
+        errorMessage = err.response.data?.error || errorMessage;
+      } else if (err.request) {
+        // Request was made but no response received (network error)
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      } else if (err.message) {
+        // Something else happened
+        if (err.message.includes("Network Error") || err.message.includes("timeout")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }
