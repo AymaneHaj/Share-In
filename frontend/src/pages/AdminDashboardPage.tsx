@@ -118,15 +118,25 @@ const AdminDashboardPage = () => {
     }
   };
 
+  const getDocumentTypeLabel = (type: string): string => {
+    const typeMap: { [key: string]: string } = {
+      cin: "CIN",
+      driving_license: "Permis",
+      vehicle_registration: "Carte Grise",
+    };
+    return typeMap[type] || type.replace(/_/g, " ").toUpperCase();
+  };
+
   const prepareChartData = () => {
     if (!stats) return { byType: [], byStatus: [] };
 
-    const byType = Object.entries(stats.documents_by_type || {}).map(
-      ([type, count]) => ({
-        name: type.replace("_", " ").toUpperCase(),
+    const byType = Object.entries(stats.documents_by_type || {})
+      .filter(([_, count]) => count > 0) // Only show types with count > 0
+      .map(([type, count]) => ({
+        name: getDocumentTypeLabel(type),
         value: count,
-      })
-    );
+        typeKey: type, // Keep original type for color matching
+      }));
 
     const byStatus = Object.entries(stats.documents_by_status || {}).map(
       ([status, count]) => ({
@@ -237,7 +247,7 @@ const AdminDashboardPage = () => {
           {/* Documents by Type */}
           <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-xl border border-white/20 p-6 transition-all duration-500 hover:shadow-2xl">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Documents by Type
+              Documents par Type
             </h2>
             <ResponsiveContainer width="100%" height={320}>
               <PieChart>
@@ -256,7 +266,7 @@ const AdminDashboardPage = () => {
                   animationDuration={800}
                 >
                   {chartData.byType.map((entry, index) => {
-                    const colorKey = entry.name.toLowerCase().replace(" ", "_") as keyof typeof COLORS;
+                    const colorKey = (entry as any).typeKey as keyof typeof COLORS;
                     return (
                       <Cell
                         key={`cell-${index}`}
@@ -323,11 +333,11 @@ const AdminDashboardPage = () => {
                 }
                 className="px-4 py-2 border border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
               >
-                <option value="">All Types</option>
+                <option value="">Tous les types</option>
                 <option value="cin">CIN</option>
-                <option value="driving_license">Driving License</option>
+                <option value="driving_license">Permis</option>
                 <option value="vehicle_registration">
-                  Vehicle Registration
+                  Carte Grise
                 </option>
               </select>
               <select
@@ -376,7 +386,7 @@ const AdminDashboardPage = () => {
                   >
                     <td className="py-4 px-4">
                       <span className="px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg text-sm font-medium text-gray-700">
-                        {doc.document_type.replace("_", " ").toUpperCase()}
+                        {getDocumentTypeLabel(doc.document_type)}
                       </span>
                     </td>
                     <td className="py-4 px-4">
@@ -497,7 +507,7 @@ const AdminDashboardPage = () => {
                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
                   <p className="text-sm text-gray-500 mb-1">Document Type:</p>
                   <p className="font-semibold text-gray-900">
-                    {documentToDelete.document_type.replace("_", " ").toUpperCase()}
+                    {getDocumentTypeLabel(documentToDelete.document_type)}
                   </p>
                   {documentToDelete.user && (
                     <>
