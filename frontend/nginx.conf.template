@@ -1,4 +1,4 @@
-# frontend/nginx.conf
+# frontend/nginx.conf.template
 
 # Custom Nginx configuration to serve the Vue.js application
 # and proxy API requests to the backend server
