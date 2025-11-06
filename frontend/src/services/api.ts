@@ -5,8 +5,7 @@ import { API_BASE_URL } from "../config/config";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
-  timeout: 120000, // 2 minutes timeout for file uploads (especially on mobile)
+  withCredentials: true
 });
 
 // Request Interceptor to add the auth token
