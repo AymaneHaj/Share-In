@@ -15,6 +15,7 @@ def configure_cloudinary():
 def upload_to_cloudinary(file_to_upload, folder="document_uploads"):
     """
     Uploads a file-like object to Cloudinary and returns the secure URL.
+    Supports all common image formats.
     
     :param file_to_upload: The file object (e.g., request.files['file'])
     :param folder: The Cloudinary folder to upload into
@@ -24,11 +25,17 @@ def upload_to_cloudinary(file_to_upload, folder="document_uploads"):
         # Configure Cloudinary (it's safe to call this multiple times)
         configure_cloudinary()
         
-        # Upload the file
+        # Get filename for better format detection
+        filename = getattr(file_to_upload, 'filename', '')
+        
+        # Upload the file with explicit image resource type
+        # Cloudinary will handle format conversion if needed
         upload_result = cloudinary.uploader.upload(
             file_to_upload,
             folder=folder,
-            resource_type="auto"  # Let Cloudinary detect file type (image/pdf)
+            resource_type="image",  # Explicitly set as image to support all image formats
+            format="auto",  # Let Cloudinary optimize the format
+            flags="immutable_cache"  # Cache optimization
         )
         
         # Return the secure (https) URL
@@ -36,4 +43,5 @@ def upload_to_cloudinary(file_to_upload, folder="document_uploads"):
         
     except Exception as e:
         print(f"❌ Error uploading to Cloudinary: {e}")
+        print(f"   File: {getattr(file_to_upload, 'filename', 'unknown')}")
         return None

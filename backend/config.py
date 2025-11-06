@@ -24,7 +24,13 @@ class Config:
 
     # File Upload settings
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+    # Accept all common image formats
+    ALLOWED_EXTENSIONS = {
+        'png', 'jpg', 'jpeg', 'jpe', 'jfif',  # JPEG variants
+        'webp', 'gif', 'bmp', 'tiff', 'tif',  # Other common formats
+        'svg', 'ico', 'heic', 'heif',         # Additional formats
+        'avif', 'jp2', 'j2k', 'jpx'           # Modern formats
+    }
     
     # Flask settings
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'

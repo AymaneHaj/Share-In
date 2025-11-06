@@ -266,8 +266,16 @@ const DashboardPage: React.FC = () => {
     }
 
     // Check file type *after* potential conversion
-    if (!processedFile.type.startsWith("image/")) {
-      setError("Please upload an image file (JPEG, PNG).");
+    // Accept any image type, or files without MIME type (some browsers don't set it)
+    const fileType = processedFile.type.toLowerCase();
+    const isImageType = fileType.startsWith("image/") || fileType === "";
+    
+    // Also check by extension as fallback for files without MIME type
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff', '.svg', '.heic', '.heif', '.avif', '.ico'];
+    const hasImageExtension = imageExtensions.some(ext => fileName.endsWith(ext));
+    
+    if (!isImageType && !hasImageExtension) {
+      setError("Please upload an image file. Supported formats: JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, HEIC, AVIF, and more.");
       return;
     }
 
