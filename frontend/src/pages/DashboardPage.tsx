@@ -1,5 +1,6 @@
 // src/pages/DashboardPage.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, type ComponentType } from "react";
+import type { LucideProps } from "lucide-react";
 // Import the new services
 import * as documentService from "../services/documentService";
 // Import the shared type
@@ -17,23 +18,34 @@ import {
   ArrowRight,
   Trash2,
 } from "lucide-react";
+// Import the HEIC converter
+import heic2any from "heic2any";
 
 // --- Interfaces ---
+
+// Types for field schema (FIXED from 'any')
+interface SchemaField {
+  key: string;
+  label: string;
+}
+interface SchemaGroup {
+  title: string;
+  fields: SchemaField[];
+}
+type SchemaData = Record<string, SchemaGroup[]>;
+
 // This interface is for the UI selection cards
 interface DocumentType {
   id: "cin" | "driving_license" | "vehicle_registration";
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ComponentType<LucideProps>; // FIXED: Changed from React.ReactNode
   gradient: string;
   shadowColor: string;
 }
 
 // --- The Component ---
 const DashboardPage: React.FC = () => {
-  // NOTE: We no longer need `useAuth()` or `token` here.
-  // The api.ts interceptor handles authentication automatically.
-
   // --- States ---
   const [selectedType, setSelectedType] = useState<DocumentType["id"] | null>(
     null
@@ -41,6 +53,9 @@ const DashboardPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingSchema, setIsLoadingSchema] = useState(true);
   const [error, setError] = useState<string>("");
+
+  // NEW: State for HEIC conversion
+  const [isConverting, setIsConverting] = useState(false);
 
   // This state holds the full API response for the document
   const [uploadResult, setUploadResult] = useState<DocumentResult | null>(null);
@@ -52,10 +67,10 @@ const DashboardPage: React.FC = () => {
     null
   );
 
-  // File states - used for other document types
-  const [_uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [_preview, setPreview] = useState<string | null>(null);
-  const [_isDragging, setIsDragging] = useState(false);
+  // File states - used for other document types (RESPECTING USER'S ORIGINAL LOGIC)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // CIN specific states - for separate images upload
   const [uploadedFileRecto, setUploadedFileRecto] = useState<File | null>(null);
@@ -65,23 +80,8 @@ const DashboardPage: React.FC = () => {
   const [previewVerso, setPreviewVerso] = useState<string | null>(null);
   const [isDraggingVerso, setIsDraggingVerso] = useState(false);
 
-  // Types for field schema
-  interface SchemaField {
-    key: string;
-    label: string;
-  }
-
-  interface SchemaGroup {
-    title: string;
-    fields: SchemaField[];
-  }
-
-  interface FieldSchema {
-    [documentType: string]: SchemaGroup[];
-  }
-
   // PRO: State for the dynamic schema, fetched from backend
-  const [fieldSchema, setFieldSchema] = useState<FieldSchema>({});
+  const [fieldSchema, setFieldSchema] = useState<SchemaData>({}); // FIXED: Use SchemaData type
 
   // --- PRO: Load the schema from the backend on page load ---
   useEffect(() => {
@@ -132,6 +132,7 @@ const DashboardPage: React.FC = () => {
             setUploadResult(documentData); // Update with final data
           } else if (documentData.status === "processing") {
             // Update status if it changed from 'pending'
+            // FIXED: Check if prev exists before spreading
             setUploadResult((prev) =>
               prev ? { ...prev, status: "processing" } : null
             );
@@ -139,7 +140,7 @@ const DashboardPage: React.FC = () => {
         } catch (err) {
           setError(
             (err as any).response?.data?.error ||
-              "Failed to check document status."
+            "Failed to check document status."
           );
           stopPolling();
         }
@@ -162,74 +163,116 @@ const DashboardPage: React.FC = () => {
     }
   }, [uploadResult?.status, uploadResult?.extracted_data, editableData]);
 
-  // --- Static UI Data ---
+  // --- Static UI Data (FIXED Descriptions) ---
   const documentTypes: DocumentType[] = [
     {
       id: "cin",
       title: "CIN",
-      description: 'Upload "CIN"',
-      icon: <ScanFace className="w-10 h-10" />,
+      description: "Upload Recto (Front) and Verso (Back) images.",
+      icon: ScanFace,
       gradient: "from-cyan-400 to-cyan-600",
       shadowColor: "shadow-cyan-500/50",
     },
     {
       id: "driving_license",
-      title: "Permis",
-      description: 'Upload "Permis"',
-      icon: <Car className="w-10 h-10" />,
+      title: "Driving License",
+      description: "Upload driving license (Single side)",
+      icon: Car,
       gradient: "from-purple-400 to-purple-600",
       shadowColor: "shadow-purple-500/50",
     },
     {
       id: "vehicle_registration",
-      title: "Carte Grise",
-      description: 'Upload "Carte Grise"',
-      icon: <FileText className="w-10 h-10" />,
+      title: "Vehicle Registration",
+      description: 'Upload "Carte Grise" (Single side)',
+      icon: FileText,
       gradient: "from-pink-400 to-pink-600",
       shadowColor: "shadow-pink-500/50",
     },
   ];
 
-  // --- File Handlers ---
-  const processFile = (
+  // --- File Handlers (MODIFIED FOR HEIC) ---
+  const processFile = async (
     file: File | null,
-    side?: "single" | "recto" | "verso"
+    side: "single" | "recto" | "verso"
   ) => {
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        if (side === "recto") {
-          setUploadedFileRecto(file);
-          setPreviewRecto(result);
-        } else if (side === "verso") {
-          setUploadedFileVerso(file);
-          setPreviewVerso(result);
-        } else {
-          setUploadedFile(file);
-          setPreview(result);
-        }
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setError("Please upload an image file (JPEG, PNG)");
+    if (!file) return;
+
+    let processedFile = file;
+    const fileName = file.name.toLowerCase();
+
+    // Check if it's HEIC/HEIF
+    if (fileName.endsWith(".heic") || fileName.endsWith(".heif")) {
+      setIsConverting(true);
+      setError("");
+      try {
+        // Convert it to JPEG
+        const convertedBlob = (await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8,
+        })) as Blob;
+
+        // Create a new File object
+        processedFile = new File(
+          [convertedBlob],
+          `${fileName.split(".")[0]}.jpg`,
+          {
+            type: "image/jpeg",
+            lastModified: new Date().getTime(),
+          }
+        );
+      } catch (err) {
+        console.error("HEIC conversion failed:", err);
+        setError(
+          "Failed to convert HEIC image. Please try a JPEG or PNG."
+        );
+        setIsConverting(false);
+        return; // Stop processing
+      } finally {
+        setIsConverting(false);
+      }
     }
+
+    // Check file type *after* potential conversion
+    if (!processedFile.type.startsWith("image/")) {
+      setError("Please upload an image file (JPEG, PNG).");
+      return;
+    }
+
+    // Set state based on side
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      if (side === "recto") {
+        setUploadedFileRecto(processedFile);
+        setPreviewRecto(result);
+      } else if (side === "verso") {
+        setUploadedFileVerso(processedFile);
+        setPreviewVerso(result);
+      } else {
+        // This is for the 'single' case
+        setUploadedFile(processedFile);
+        setPreview(result);
+      }
+    };
+    reader.readAsDataURL(processedFile);
   };
 
-  const handleFileSelect = (
+  const handleFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    side?: "single" | "recto" | "verso"
+    side: "single" | "recto" | "verso"
   ) => {
     setError("");
     if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0], side);
+      await processFile(e.target.files[0], side); // Make it async
     }
     e.target.value = "";
   };
 
-  const handleDrop = (
+  const handleDrop = async (
     e: React.DragEvent,
-    side?: "single" | "recto" | "verso"
+    side: "single" | "recto" | "verso"
   ) => {
     e.preventDefault();
     setError("");
@@ -238,13 +281,13 @@ const DashboardPage: React.FC = () => {
     else setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0], side);
+      await processFile(e.dataTransfer.files[0], side); // Make it async
     }
   };
 
   const handleDragOver = (
     e: React.DragEvent,
-    side?: "single" | "recto" | "verso"
+    side: "single" | "recto" | "verso"
   ) => {
     e.preventDefault();
     if (side === "recto") setIsDraggingRecto(true);
@@ -254,7 +297,7 @@ const DashboardPage: React.FC = () => {
 
   const handleDragLeave = (
     e: React.DragEvent,
-    side?: "single" | "recto" | "verso"
+    side: "single" | "recto" | "verso"
   ) => {
     e.preventDefault();
     if (side === "recto") setIsDraggingRecto(false);
@@ -306,15 +349,26 @@ const DashboardPage: React.FC = () => {
     const formData = new FormData();
     formData.append("document_type", selectedType);
 
-    // Append files based on document type
-    if (!uploadedFileRecto) {
-      setError("Please upload at least the Recto (Front) image.");
-      setIsUploading(false);
-      return;
-    }
-    formData.append("file_recto", uploadedFileRecto);
-    if (uploadedFileVerso) {
-      formData.append("file_verso", uploadedFileVerso);
+    // RESPECTING USER'S ORIGINAL LOGIC
+    if (selectedType === "cin") {
+      // CIN: recto required, verso optional
+      if (!uploadedFileRecto) {
+        setError("Please upload at least the Recto (Front) image.");
+        setIsUploading(false);
+        return;
+      }
+      formData.append("file_recto", uploadedFileRecto);
+      if (uploadedFileVerso) {
+        formData.append("file_verso", uploadedFileVerso);
+      }
+    } else {
+      // Other document types: single file
+      if (!uploadedFile) {
+        setError("Please upload a file.");
+        setIsUploading(false);
+        return;
+      }
+      formData.append("file", uploadedFile);
     }
 
     try {
@@ -375,17 +429,19 @@ const DashboardPage: React.FC = () => {
             <button
               key={type.id}
               onClick={() => startNewWith(type.id)}
-              className={`bg-white rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-                selectedType === type.id
+              className={`bg-white rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${selectedType === type.id
                   ? "ring-4 ring-cyan-400 shadow-lg"
                   : "shadow-md hover:shadow-lg border border-transparent"
-              }`}
+                }`}
             >
               <div className="flex flex-col items-center text-center">
                 <div
                   className={`w-20 h-20 bg-gradient-to-br ${type.gradient} rounded-2xl flex items-center justify-center mb-4 shadow-lg ${type.shadowColor}`}
                 >
-                  <div className="text-white">{type.icon}</div>
+                  {/* FIXED: Use React.createElement for icon */}
+                  <div className="text-white">
+                    {React.createElement(type.icon, { className: "w-10 h-10" })}
+                  </div>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">
                   {type.title}
@@ -410,140 +466,211 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-                {/* All document types: recto required, verso optional */}
-                <div>
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-700 font-medium">
-                      Upload Recto (Front) image - required. Verso (Back) image is optional for all document types.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Recto Dropzone */}
-                    <div
-                      onDragOver={(e) => handleDragOver(e, "recto")}
-                      onDragLeave={(e) => handleDragLeave(e, "recto")}
-                      onDrop={(e) => handleDrop(e, "recto")}
-                      className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                        isDraggingRecto
-                          ? "border-cyan-500 bg-cyan-50"
-                          : uploadedFileRecto
-                          ? "border-green-400 bg-green-50"
-                          : "border-slate-300 hover:border-cyan-400"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileSelect(e, "recto")}
-                        className="hidden"
-                        id="file-upload-recto"
-                      />
-                      {!uploadedFileRecto ? (
-                        <label
-                          htmlFor="file-upload-recto"
-                          className="cursor-pointer"
-                        >
-                          <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
-                          <p className="text-lg font-semibold text-slate-900 mb-2">
-                            Upload Recto (Front)
-                          </p>
-                          <span className="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium">
-                            Choose File
-                          </span>
-                        </label>
-                      ) : (
-                        <div className="space-y-4">
-                          <img
-                            src={previewRecto || undefined}
-                            alt="Recto Preview"
-                            className="max-h-64 mx-auto rounded-lg shadow-md"
-                          />
-                          <p className="text-lg font-semibold text-slate-900">
-                            {uploadedFileRecto.name}
-                          </p>
-                        </div>
-                      )}
-                    </div>
 
-                    {/* Verso Dropzone */}
-                    <div
-                      onDragOver={(e) => handleDragOver(e, "verso")}
-                      onDragLeave={(e) => handleDragLeave(e, "verso")}
-                      onDrop={(e) => handleDrop(e, "verso")}
-                      className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                        isDraggingVerso
-                          ? "border-purple-500 bg-purple-50"
-                          : uploadedFileVerso
-                          ? "border-green-400 bg-green-50"
-                          : "border-slate-300 hover:border-purple-400"
-                      }`}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileSelect(e, "verso")}
-                        className="hidden"
-                        id="file-upload-verso"
-                      />
-                      {!uploadedFileVerso ? (
-                        <label
-                          htmlFor="file-upload-verso"
-                          className="cursor-pointer"
-                        >
-                          <UploadCloud className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-                          <p className="text-lg font-semibold text-slate-900 mb-2">
-                            Upload Verso (Back){" "}
-                            <span className="text-sm text-slate-500">
-                              (Optional)
-                            </span>
-                          </p>
-                          <span className="inline-block bg-purple-500 text-white px-6 py-2 rounded-lg font-medium">
-                            Choose File
-                          </span>
-                        </label>
-                      ) : (
-                        <div className="space-y-4">
-                          <img
-                            src={previewVerso || undefined}
-                            alt="Verso Preview"
-                            className="max-h-64 mx-auto rounded-lg shadow-md"
-                          />
-                          <p className="text-lg font-semibold text-slate-900">
-                            {uploadedFileVerso.name}
-                          </p>
-                        </div>
-                      )}
+                {/* NEW: Show HEIC converting message */}
+                {isConverting && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <Loader2 className="animate-spin h-5 w-5 text-yellow-600" />
+                      <p className="text-yellow-700 text-sm font-medium">
+                        Converting HEIC image to JPEG...
+                      </p>
                     </div>
-                  </div>
-                </div>
-                {/* Upload Button */}
-                {(uploadedFileRecto || uploadedFileVerso) && (
-                  <div className="flex gap-4 justify-center mt-6">
-                    <button
-                      onClick={handleUpload}
-                      disabled={isUploading}
-                      className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="animate-spin h-5 w-5" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <ArrowRight className="w-5 h-5" />
-                          Process Document
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={resetUpload}
-                      className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
                   </div>
                 )}
+
+                {/* RESPECTING USER'S ORIGINAL LOGIC (if/else for CIN) */}
+                {selectedType === "cin" ? (
+                  // CIN: Separate images (recto required, verso optional)
+                  <div>
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700 font-medium">
+                        Upload Recto (Front) image - required. Verso (Back)
+                        image is optional.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Recto Dropzone */}
+                      <div
+                        onDragOver={(e) => handleDragOver(e, "recto")}
+                        onDragLeave={(e) => handleDragLeave(e, "recto")}
+                        onDrop={(e) => handleDrop(e, "recto")}
+                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDraggingRecto
+                            ? "border-cyan-500 bg-cyan-50"
+                            : uploadedFileRecto
+                              ? "border-green-400 bg-green-50"
+                              : "border-slate-300 hover:border-cyan-400"
+                          }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,.heic,.heif" // Accept HEIC
+                          onChange={(e) => handleFileSelect(e, "recto")}
+                          className="hidden"
+                          id="file-upload-recto"
+                        />
+                        {!uploadedFileRecto ? (
+                          <label
+                            htmlFor="file-upload-recto"
+                            className="cursor-pointer"
+                          >
+                            <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
+                            <p className="text-lg font-semibold text-slate-900 mb-2">
+                              Upload Recto (Front)
+                            </p>
+                            <span className="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium">
+                              Choose File
+                            </span>
+                          </label>
+                        ) : (
+                          <div className="space-y-4">
+                            <img
+                              src={previewRecto || undefined}
+                              alt="Recto Preview"
+                              className="max-h-64 mx-auto rounded-lg shadow-md"
+                            />
+                            <p className="text-lg font-semibold text-slate-900">
+                              {uploadedFileRecto.name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Verso Dropzone */}
+                      <div
+                        onDragOver={(e) => handleDragOver(e, "verso")}
+                        onDragLeave={(e) => handleDragLeave(e, "verso")}
+                        onDrop={(e) => handleDrop(e, "verso")}
+                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDraggingVerso
+                            ? "border-purple-500 bg-purple-50"
+                            : uploadedFileVerso
+                              ? "border-green-400 bg-green-50"
+                              : "border-slate-300 hover:border-purple-400"
+                          }`}
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,.heic,.heif" // Accept HEIC
+                          onChange={(e) => handleFileSelect(e, "verso")}
+                          className="hidden"
+                          id="file-upload-verso"
+                        />
+                        {!uploadedFileVerso ? (
+                          <label
+                            htmlFor="file-upload-verso"
+                            className="cursor-pointer"
+                          >
+                            <UploadCloud className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+                            <p className="text-lg font-semibold text-slate-900 mb-2">
+                              Upload Verso (Back){" "}
+                              <span className="text-sm text-slate-500">
+                                (Optional)
+                              </span>
+                            </p>
+                            <span className="inline-block bg-purple-500 text-white px-6 py-2 rounded-lg font-medium">
+                              Choose File
+                            </span>
+                          </label>
+                        ) : (
+                          <div className="space-y-4">
+                            <img
+                              src={previewVerso || undefined}
+                              alt="Verso Preview"
+                              className="max-h-64 mx-auto rounded-lg shadow-md"
+                            />
+                            <p className="text-lg font-semibold text-slate-900">
+                              {uploadedFileVerso.name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Other document types: Single file
+                  <div
+                    onDragOver={(e) => handleDragOver(e, "single")}
+                    onDragLeave={(e) => handleDragLeave(e, "single")}
+                    onDrop={(e) => handleDrop(e, "single")}
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${isDragging
+                        ? "border-cyan-500 bg-cyan-50"
+                        : uploadedFile
+                          ? "border-green-400 bg-green-50"
+                          : "border-slate-300 hover:border-cyan-400 hover:bg-slate-50"
+                      }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*,.heic,.heif" // Accept HEIC
+                      onChange={(e) => handleFileSelect(e, "single")}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    {!uploadedFile ? (
+                      <label htmlFor="file-upload" className="cursor-pointer">
+                        <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
+                        <p className="text-lg font-semibold text-slate-900 mb-2">
+                          Drag and drop your document here
+                        </p>
+                        <p className="text-slate-600 mb-4">
+                          or click to select
+                        </p>
+                        <span className="inline-block bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium">
+                          Choose File
+                        </span>
+                      </label>
+                    ) : (
+                      <div className="space-y-4">
+                        <img
+                          src={preview || undefined}
+                          alt="Preview"
+                          className="max-h-64 mx-auto rounded-lg shadow-md"
+                        />
+                        <p className="text-lg font-semibold text-slate-900">
+                          {uploadedFile.name}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Upload Button (RESPECTING USER'S LOGIC) */}
+                {((selectedType === "cin" && uploadedFileRecto) ||
+                  (selectedType !== "cin" && uploadedFile)) && (
+                    <div className="flex gap-4 justify-center mt-6">
+                      <button
+                        onClick={handleUpload}
+                        disabled={isUploading || isConverting} // Disable if converting
+                        className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 text-white px-8 py-3 rounded-lg font-semibold transition-all shadow-lg disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="animate-spin h-5 w-5" />
+                            Processing...
+                          </>
+                        ) : isConverting ? (
+                          <>
+                            <Loader2 className="animate-spin h-5 w-5" />
+                            Converting...
+                          </>
+                        ) : (
+                          <>
+                            <ArrowRight className="w-5 h-5" />
+                            Process Document
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={resetUpload}
+                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-3 rounded-lg font-semibold transition-all"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
               </div>
             ) : (
               /* STATE 2: We have an upload result (pending, completed, etc.) */
@@ -564,16 +691,16 @@ const DashboardPage: React.FC = () => {
                 {/* CASE 2A: document is running */}
                 {(uploadResult.status === "pending" ||
                   uploadResult.status === "processing") && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
-                      <p className="text-blue-700 text-sm font-medium">
-                        Document is {uploadResult.status}... Checking for
-                        results automatically.
-                      </p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <Loader2 className="animate-spin h-5 w-5 text-blue-600" />
+                        <p className="text-blue-700 text-sm font-medium">
+                          Document is {uploadResult.status}... Checking for
+                          results automatically.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* CASE 2B: document failed */}
                 {uploadResult.status === "failed" && (
@@ -619,7 +746,7 @@ const DashboardPage: React.FC = () => {
                       const docType =
                         uploadResult.document_type || selectedType || "cin";
                       // Use the schema from the state
-                      const groups = fieldSchema[docType] || [];
+                      const groups: SchemaGroup[] = fieldSchema[docType] || [];
 
                       return (
                         <div className="space-y-6">
@@ -629,7 +756,8 @@ const DashboardPage: React.FC = () => {
                                 {group.title}
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {group.fields.map(({ key, label }) => (
+                                {/* FIXED: Added types for key/label */}
+                                {group.fields.map(({ key, label }: SchemaField) => (
                                   <div key={key} className="group">
                                     <label
                                       htmlFor={key}
@@ -650,7 +778,6 @@ const DashboardPage: React.FC = () => {
                               </div>
                             </div>
                           ))}
-                          {/* ... (Add logic for "other fields" if needed) ... */}
                         </div>
                       );
                     })()}
@@ -697,12 +824,10 @@ const DashboardPage: React.FC = () => {
                             <span
                               className={`inline-flex w-10 h-10 rounded-lg bg-gradient-to-br ${type.gradient} text-white items-center justify-center shadow-md`}
                             >
-                              {React.cloneElement(
-                                type.icon as React.ReactElement<{
-                                  className?: string;
-                                }>,
-                                { className: "w-6 h-6" }
-                              )}
+                              {/* FIXED: Use React.createElement */}
+                              {React.createElement(type.icon, {
+                                className: "w-6 h-6",
+                              })}
                             </span>
                             <div>
                               <div className="font-semibold text-slate-900">
