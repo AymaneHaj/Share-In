@@ -175,15 +175,15 @@ const DashboardPage: React.FC = () => {
     },
     {
       id: "driving_license",
-      title: "Driving License",
-      description: "Upload driving license (Single side)",
+      title: "Permis",
+      description: "Upload Permis (Single side)",
       icon: Car,
       gradient: "from-purple-400 to-purple-600",
       shadowColor: "shadow-purple-500/50",
     },
     {
       id: "vehicle_registration",
-      title: "Vehicle Registration",
+      title: "Carte Grise",
       description: 'Upload "Carte Grise" (Single side)',
       icon: FileText,
       gradient: "from-pink-400 to-pink-600",
