@@ -78,7 +78,19 @@ def create_document():
         
         cloud_url_recto = upload_to_cloudinary(file_recto, folder=upload_folder)
         if not cloud_url_recto:
-            return jsonify({'error': 'Cloudinary upload failed for recto file'}), 500
+            # Check if it's a configuration issue
+            cloud_name = current_app.config.get('CLOUDINARY_CLOUD_NAME')
+            api_key = current_app.config.get('CLOUDINARY_API_KEY')
+            api_secret = current_app.config.get('CLOUDINARY_API_SECRET')
+            
+            if not cloud_name or not api_key or not api_secret:
+                return jsonify({
+                    'error': 'Cloudinary is not configured. Please check environment variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET'
+                }), 500
+            
+            return jsonify({
+                'error': 'Failed to upload recto file to Cloudinary. Please check the file format and try again.'
+            }), 500
         
         # Verso is optional for all document types
         cloud_url_verso = None
@@ -90,7 +102,9 @@ def create_document():
                 
                 cloud_url_verso = upload_to_cloudinary(file_verso, folder=upload_folder)
                 if not cloud_url_verso:
-                    return jsonify({'error': 'Cloudinary upload failed for verso file'}), 500
+                    return jsonify({
+                        'error': 'Failed to upload verso file to Cloudinary. Please check the file format and try again.'
+                    }), 500
                 
                 original_filename = f"{file_recto.filename}, {file_verso.filename}"
             else:
