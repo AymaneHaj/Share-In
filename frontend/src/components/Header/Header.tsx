@@ -30,17 +30,17 @@ const Header: React.FC = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-indigo-950/80 backdrop-blur-md shadow-lg shadow-purple-500/20"
+          ? "bg-indigo-950/90 backdrop-blur-md shadow-lg shadow-purple-500/20"
           : "bg-transparent"
       }`}
     >
-      <nav className="max-w-7xl mx-auto px-6 py-4">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/50 group-hover:shadow-xl group-hover:shadow-purple-500/50 transition-all">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/50 group-hover:shadow-xl group-hover:shadow-purple-500/50 transition-all">
               <svg
-                className="w-6 h-6 text-white"
+                className="w-4 h-4 sm:w-6 sm:h-6 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -53,22 +53,20 @@ const Header: React.FC = () => {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               DocuScan AI
             </span>
           </Link>
 
-        
-
           {/* Auth Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
               <>
                 {/* User role: show Dashboard link */}
                 {user?.role === "user" && (
                   <Link
                     to="/dashboard"
-                    className="hidden sm:block px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
+                    className="hidden sm:block px-4 sm:px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium text-sm sm:text-base"
                   >
                     Dashboard
                   </Link>
@@ -77,14 +75,14 @@ const Header: React.FC = () => {
                 {user?.role === "admin" && (
                   <Link
                     to="/admin"
-                    className="hidden sm:block px-6 py-2 text-white border border-cyan-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
+                    className="hidden sm:block px-4 sm:px-6 py-2 text-white border border-cyan-400/50 rounded-lg hover:bg-white/10 transition-all font-medium text-sm sm:text-base"
                   >
                     Dashboard
                   </Link>
                 )}
                 <button
                   onClick={handleLogout}
-                  className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-red-500/50 hover:shadow-xl hover:shadow-red-500/50"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-red-500/50 hover:shadow-xl hover:shadow-red-500/50 text-sm sm:text-base"
                 >
                   Logout
                 </button>
@@ -93,13 +91,13 @@ const Header: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium"
+                  className="px-4 sm:px-6 py-2 text-white border border-purple-400/50 rounded-lg hover:bg-white/10 transition-all font-medium text-sm sm:text-base"
                 >
                   Login
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-cyan-500/50"
+                  className="px-4 sm:px-6 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-cyan-500/50 text-sm sm:text-base"
                 >
                   Sign Up
                 </Link>

@@ -694,6 +694,7 @@ const DashboardPage: React.FC = () => {
                         <input
                           type="file"
                           accept="image/*,.heic,.heif"
+                          capture="environment"
                           onChange={(e) => handleFileSelect(e, "recto")}
                           className="hidden"
                           id="file-upload-recto"
@@ -707,8 +708,11 @@ const DashboardPage: React.FC = () => {
                             <p className="text-lg font-semibold text-slate-900 mb-2">
                               Upload Recto (Front)
                             </p>
+                            <p className="text-sm text-gray-600 mb-3">
+                              📷 Prendre une photo ou choisir un fichier
+                            </p>
                             <span className="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium">
-                              Choose File
+                              Choisir ou Photographier
                             </span>
                           </label>
                         ) : (
@@ -741,6 +745,7 @@ const DashboardPage: React.FC = () => {
                         <input
                           type="file"
                           accept="image/*,.heic,.heif"
+                          capture="environment"
                           onChange={(e) => handleFileSelect(e, "verso")}
                           className="hidden"
                           id="file-upload-verso"
@@ -757,8 +762,11 @@ const DashboardPage: React.FC = () => {
                                 (Optional)
                               </span>
                             </p>
+                            <p className="text-sm text-gray-600 mb-3">
+                              📷 Prendre une photo ou choisir un fichier
+                            </p>
                             <span className="inline-block bg-purple-500 text-white px-6 py-2 rounded-lg font-medium">
-                              Choose File
+                              Choisir ou Photographier
                             </span>
                           </label>
                         ) : (
@@ -793,6 +801,7 @@ const DashboardPage: React.FC = () => {
                     <input
                       type="file"
                       accept="image/*,.heic,.heif"
+                      capture="environment"
                       onChange={(e) => handleFileSelect(e, "single")}
                       className="hidden"
                       id="file-upload"
@@ -801,13 +810,13 @@ const DashboardPage: React.FC = () => {
                       <label htmlFor="file-upload" className="cursor-pointer">
                         <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
                         <p className="text-lg font-semibold text-slate-900 mb-2">
-                          Drag and drop your document here
+                          Glissez-déposez votre document ici
                         </p>
-                        <p className="text-slate-600 mb-4">
-                          or click to select
+                        <p className="text-sm text-gray-600 mb-3">
+                          📷 Prendre une photo ou choisir un fichier
                         </p>
                         <span className="inline-block bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium">
-                          Choose File
+                          Choisir ou Photographier
                         </span>
                       </label>
                     ) : (
