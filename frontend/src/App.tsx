@@ -8,6 +8,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import ProtectedRoute from "./router/ProtectedRoute";
 import AdminProtectedRoute from "./router/AdminProtectedRoute";
+import { DashboardTabsProvider } from "./contexts/DashboardTabsContext";
 
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -43,9 +44,11 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <MainLayout>
-              <DashboardPage />
-            </MainLayout>
+            <DashboardTabsProvider>
+              <MainLayout>
+                <DashboardPage />
+              </MainLayout>
+            </DashboardTabsProvider>
           </ProtectedRoute>
         }
       />

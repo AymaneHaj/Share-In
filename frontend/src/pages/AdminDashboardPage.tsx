@@ -189,10 +189,9 @@ const AdminDashboardPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 animate-fade-in">
+    <div>
+      {/* Header */}
+      <div className="mb-8 animate-fade-in">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               Admin Dashboard
@@ -609,23 +608,22 @@ const AdminDashboardPage = () => {
             </div>
           </div>
         )}
-      </div>
-
-      <style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
+        
+        <style>{`
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          .animate-fade-in {
+            animation: fade-in 0.6s ease-out;
           }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-      `}</style>
+        `}</style>
     </div>
   );
 };

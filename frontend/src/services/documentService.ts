@@ -68,3 +68,43 @@ export const getFieldSchema = async (): Promise<any> => {
   const response = await api.get("/api/documents/schema");
   return response.data;
 };
+
+/**
+ * Gets all documents for the current user
+ */
+export const getUserDocuments = async (
+  page: number = 1,
+  perPage: number = 10
+): Promise<{
+  documents: DocumentResult[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}> => {
+  const response = await api.get("/api/documents", {
+    params: { page, per_page: perPage },
+  });
+  return response.data;
+};
+
+/**
+ * Updates a document's extracted data
+ */
+export const updateDocument = async (
+  documentId: string,
+  data: { extracted_data?: any; status?: string }
+): Promise<{ message: string; document: DocumentResult }> => {
+  const response = await api.put(`/api/documents/${documentId}`, data);
+  return response.data;
+};
+
+/**
+ * Deletes a document
+ */
+export const deleteDocument = async (
+  documentId: string
+): Promise<{ message: string }> => {
+  const response = await api.delete(`/api/documents/${documentId}`);
+  return response.data;
+};

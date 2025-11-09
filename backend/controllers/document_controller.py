@@ -315,3 +315,56 @@ def update_document_data(document_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def delete_user_document(document_id):
+    """Delete a document (user can only delete their own documents)"""
+    try:
+        user = getattr(request, 'current_user', None)
+        if not user:
+            return jsonify({'error': 'User not authenticated'}), 401
+        
+        document = Document.objects(id=document_id, user=user.id).first()
+        if not document:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        document.delete()
+        
+        return jsonify({'message': 'Document deleted successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def update_user_document_data(document_id):
+    """Update document extracted data (user can only update their own documents)"""
+    try:
+        user = getattr(request, 'current_user', None)
+        if not user:
+            return jsonify({'error': 'User not authenticated'}), 401
+        
+        document = Document.objects(id=document_id, user=user.id).first()
+        if not document:
+            return jsonify({'error': 'Document not found'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update extracted_data
+        if 'extracted_data' in data:
+            document.extracted_data = data['extracted_data']
+        
+        # Optionally update status if provided
+        if 'status' in data:
+            new_status = data['status']
+            if new_status in ['pending', 'processing', 'completed', 'failed', 'confirmed']:
+                document.update_status(new_status)
+        
+        document.save()
+        
+        return jsonify({
+            'message': 'Document updated successfully',
+            'document': document_to_json(document)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

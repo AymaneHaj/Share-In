@@ -58,29 +58,7 @@ const Header: React.FC = () => {
             </span>
           </Link>
 
-          {/* Navigation Links - Desktop (minimal) */}
-          <div className="hidden md:flex items-center gap-8">
-            {isAuthenticated && (
-              <>
-                {user?.role === "user" && (
-                  <Link
-                    to="/dashboard"
-                    className="text-purple-200 hover:text-white transition-colors font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                )}
-                {user?.role === "admin" && (
-                  <Link
-                    to="/admin"
-                    className="text-cyan-200 hover:text-cyan-100 transition-colors font-medium"
-                  >
-                    Admin Panel
-                  </Link>
-                )}
-              </>
-            )}
-          </div>
+        
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
