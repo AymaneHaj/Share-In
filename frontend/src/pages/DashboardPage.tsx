@@ -24,6 +24,8 @@ import {
   Edit,
   Eye,
   XCircle,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 // Import the HEIC converter
 import heic2any from "heic2any";
@@ -92,6 +94,10 @@ const DashboardPage: React.FC = () => {
   const [uploadedFileVerso, setUploadedFileVerso] = useState<File | null>(null);
   const [previewVerso, setPreviewVerso] = useState<string | null>(null);
   const [isDraggingVerso, setIsDraggingVerso] = useState(false);
+
+  // State for upload source modal (camera or file)
+  const [showUploadSourceModal, setShowUploadSourceModal] = useState(false);
+  const [uploadSourceSide, setUploadSourceSide] = useState<"single" | "recto" | "verso">("single");
 
   // PRO: State for the dynamic schema, fetched from backend
   const [fieldSchema, setFieldSchema] = useState<SchemaData>({});
@@ -418,7 +424,13 @@ const DashboardPage: React.FC = () => {
   const startNewWith = (type: DocumentType["id"]) => {
     resetUpload();
     setSelectedType(type);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to upload section after a short delay to ensure it's rendered
+    setTimeout(() => {
+      const uploadSection = document.getElementById('upload-section');
+      if (uploadSection) {
+        uploadSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
   };
   // --- End of File Handlers ---
 
@@ -643,7 +655,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Upload Section */}
         {selectedType && (
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100/50 p-8 md:p-10">
+          <div id="upload-section" className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-100/50 p-8 md:p-10">
             {/* STATE 1: No upload result yet (show upload box) */}
             {!uploadResult ? (
               <div>
@@ -691,18 +703,36 @@ const DashboardPage: React.FC = () => {
                             : "border-gray-300 hover:border-cyan-400 hover:bg-gradient-to-br hover:from-gray-50 hover:to-cyan-50/30 hover:shadow-lg"
                         }`}
                       >
+                        {/* Camera input */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => {
+                            handleFileSelect(e, "recto");
+                            setShowUploadSourceModal(false);
+                          }}
+                          className="hidden"
+                          id="camera-upload-recto"
+                        />
+                        {/* File input */}
                         <input
                           type="file"
                           accept="image/*,.heic,.heif"
-                          capture="environment"
-                          onChange={(e) => handleFileSelect(e, "recto")}
+                          onChange={(e) => {
+                            handleFileSelect(e, "recto");
+                            setShowUploadSourceModal(false);
+                          }}
                           className="hidden"
                           id="file-upload-recto"
                         />
                         {!uploadedFileRecto ? (
-                          <label
-                            htmlFor="file-upload-recto"
-                            className="cursor-pointer"
+                          <button
+                            onClick={() => {
+                              setUploadSourceSide("recto");
+                              setShowUploadSourceModal(true);
+                            }}
+                            className="cursor-pointer w-full"
                           >
                             <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
                             <p className="text-lg font-semibold text-slate-900 mb-2">
@@ -714,7 +744,7 @@ const DashboardPage: React.FC = () => {
                             <span className="inline-block bg-cyan-500 text-white px-6 py-2 rounded-lg font-medium">
                               Choisir ou Photographier
                             </span>
-                          </label>
+                          </button>
                         ) : (
                           <div className="space-y-4">
                             <img
@@ -742,18 +772,36 @@ const DashboardPage: React.FC = () => {
                             : "border-gray-300 hover:border-purple-400 hover:bg-gradient-to-br hover:from-gray-50 hover:to-purple-50/30 hover:shadow-lg"
                         }`}
                       >
+                        {/* Camera input */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={(e) => {
+                            handleFileSelect(e, "verso");
+                            setShowUploadSourceModal(false);
+                          }}
+                          className="hidden"
+                          id="camera-upload-verso"
+                        />
+                        {/* File input */}
                         <input
                           type="file"
                           accept="image/*,.heic,.heif"
-                          capture="environment"
-                          onChange={(e) => handleFileSelect(e, "verso")}
+                          onChange={(e) => {
+                            handleFileSelect(e, "verso");
+                            setShowUploadSourceModal(false);
+                          }}
                           className="hidden"
                           id="file-upload-verso"
                         />
                         {!uploadedFileVerso ? (
-                          <label
-                            htmlFor="file-upload-verso"
-                            className="cursor-pointer"
+                          <button
+                            onClick={() => {
+                              setUploadSourceSide("verso");
+                              setShowUploadSourceModal(true);
+                            }}
+                            className="cursor-pointer w-full"
                           >
                             <UploadCloud className="w-16 h-16 text-purple-500 mx-auto mb-4" />
                             <p className="text-lg font-semibold text-slate-900 mb-2">
@@ -768,7 +816,7 @@ const DashboardPage: React.FC = () => {
                             <span className="inline-block bg-purple-500 text-white px-6 py-2 rounded-lg font-medium">
                               Choisir ou Photographier
                             </span>
-                          </label>
+                          </button>
                         ) : (
                           <div className="space-y-4">
                             <img
@@ -798,16 +846,37 @@ const DashboardPage: React.FC = () => {
                         : "border-gray-300 hover:border-cyan-400 hover:bg-gradient-to-br hover:from-gray-50 hover:to-cyan-50/30 hover:shadow-lg"
                     }`}
                   >
+                    {/* Camera input */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        handleFileSelect(e, "single");
+                        setShowUploadSourceModal(false);
+                      }}
+                      className="hidden"
+                      id="camera-upload"
+                    />
+                    {/* File input */}
                     <input
                       type="file"
                       accept="image/*,.heic,.heif"
-                      capture="environment"
-                      onChange={(e) => handleFileSelect(e, "single")}
+                      onChange={(e) => {
+                        handleFileSelect(e, "single");
+                        setShowUploadSourceModal(false);
+                      }}
                       className="hidden"
                       id="file-upload"
                     />
                     {!uploadedFile ? (
-                      <label htmlFor="file-upload" className="cursor-pointer">
+                      <button
+                        onClick={() => {
+                          setUploadSourceSide("single");
+                          setShowUploadSourceModal(true);
+                        }}
+                        className="cursor-pointer w-full"
+                      >
                         <UploadCloud className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
                         <p className="text-lg font-semibold text-slate-900 mb-2">
                           Glissez-déposez votre document ici
@@ -818,7 +887,7 @@ const DashboardPage: React.FC = () => {
                         <span className="inline-block bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium">
                           Choisir ou Photographier
                         </span>
-                      </label>
+                      </button>
                     ) : (
                       <div className="space-y-4">
                         <img
@@ -1379,6 +1448,72 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Source Modal - Camera or File */}
+        {showUploadSourceModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl max-w-md w-full border-2 border-gray-200/50">
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-purple-600 to-purple-700 bg-clip-text text-transparent">
+                    Choisir la source
+                  </h3>
+                  <button
+                    onClick={() => setShowUploadSourceModal(false)}
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-all"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
+                <p className="text-gray-600 mb-6 text-center">
+                  Comment souhaitez-vous ajouter l'image ?
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => {
+                      const cameraId = uploadSourceSide === "recto" 
+                        ? "camera-upload-recto" 
+                        : uploadSourceSide === "verso"
+                        ? "camera-upload-verso"
+                        : "camera-upload";
+                      const cameraInput = document.getElementById(cameraId) as HTMLInputElement;
+                      if (cameraInput) {
+                        cameraInput.click();
+                      }
+                    }}
+                    className="flex-1 flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-300 rounded-2xl hover:border-cyan-400 hover:shadow-lg transition-all group"
+                  >
+                    <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Camera className="w-8 h-8 text-white" />
+                    </div>
+                    <span className="font-semibold text-gray-900">Prendre une photo</span>
+                    <span className="text-sm text-gray-600 text-center">Utiliser la caméra</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fileId = uploadSourceSide === "recto" 
+                        ? "file-upload-recto" 
+                        : uploadSourceSide === "verso"
+                        ? "file-upload-verso"
+                        : "file-upload";
+                      const fileInput = document.getElementById(fileId) as HTMLInputElement;
+                      if (fileInput) {
+                        fileInput.click();
+                      }
+                    }}
+                    className="flex-1 flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl hover:border-purple-400 hover:shadow-lg transition-all group"
+                  >
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <ImageIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <span className="font-semibold text-gray-900">Choisir un fichier</span>
+                    <span className="text-sm text-gray-600 text-center">Depuis la galerie</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
