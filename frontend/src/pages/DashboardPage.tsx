@@ -95,9 +95,15 @@ const DashboardPage: React.FC = () => {
   const [previewVerso, setPreviewVerso] = useState<string | null>(null);
   const [isDraggingVerso, setIsDraggingVerso] = useState(false);
 
-  // State for upload source modal (camera or file)
+  // State for upload source modal (camera or file) - only used on desktop
   const [showUploadSourceModal, setShowUploadSourceModal] = useState(false);
   const [uploadSourceSide, setUploadSourceSide] = useState<"single" | "recto" | "verso">("single");
+
+  // Detect if device is mobile
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+  };
 
   // PRO: State for the dynamic schema, fetched from backend
   const [fieldSchema, setFieldSchema] = useState<SchemaData>({});
@@ -355,6 +361,7 @@ const DashboardPage: React.FC = () => {
     setError("");
     if (e.target.files && e.target.files[0]) {
       await processFile(e.target.files[0], side);
+      setShowUploadSourceModal(false);
     }
     e.target.value = "";
   };
@@ -729,8 +736,17 @@ const DashboardPage: React.FC = () => {
                         {!uploadedFileRecto ? (
                           <button
                             onClick={() => {
-                              setUploadSourceSide("recto");
-                              setShowUploadSourceModal(true);
+                              if (isMobileDevice()) {
+                                // On mobile, directly open the native file picker (gallery)
+                                const fileInput = document.getElementById("file-upload-recto") as HTMLInputElement;
+                                if (fileInput) {
+                                  fileInput.click();
+                                }
+                              } else {
+                                // On desktop, show modal to choose between camera and file
+                                setUploadSourceSide("recto");
+                                setShowUploadSourceModal(true);
+                              }
                             }}
                             className="cursor-pointer w-full"
                           >
@@ -798,8 +814,17 @@ const DashboardPage: React.FC = () => {
                         {!uploadedFileVerso ? (
                           <button
                             onClick={() => {
-                              setUploadSourceSide("verso");
-                              setShowUploadSourceModal(true);
+                              if (isMobileDevice()) {
+                                // On mobile, directly open the native file picker (gallery)
+                                const fileInput = document.getElementById("file-upload-verso") as HTMLInputElement;
+                                if (fileInput) {
+                                  fileInput.click();
+                                }
+                              } else {
+                                // On desktop, show modal to choose between camera and file
+                                setUploadSourceSide("verso");
+                                setShowUploadSourceModal(true);
+                              }
                             }}
                             className="cursor-pointer w-full"
                           >
@@ -872,8 +897,17 @@ const DashboardPage: React.FC = () => {
                     {!uploadedFile ? (
                       <button
                         onClick={() => {
-                          setUploadSourceSide("single");
-                          setShowUploadSourceModal(true);
+                          if (isMobileDevice()) {
+                            // On mobile, directly open the native file picker (gallery)
+                            const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+                            if (fileInput) {
+                              fileInput.click();
+                            }
+                          } else {
+                            // On desktop, show modal to choose between camera and file
+                            setUploadSourceSide("single");
+                            setShowUploadSourceModal(true);
+                          }
                         }}
                         className="cursor-pointer w-full"
                       >
@@ -1453,8 +1487,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Upload Source Modal - Camera or File */}
-        {showUploadSourceModal && (
+        {/* Upload Source Modal - Only for desktop (mobile uses native file picker directly) */}
+        {showUploadSourceModal && !isMobileDevice() && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
             <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl max-w-md w-full border-2 border-gray-200/50">
               <div className="p-8">
