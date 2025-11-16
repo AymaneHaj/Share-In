@@ -341,20 +341,20 @@ const AdminDashboardPage = () => {
       {/* Documents Tab Content */}
       {activeTab === "documents" && (
         <>
-          <div className="mb-8">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-1 md:mb-2">
               Documents
             </h1>
-            <p className="text-gray-600 text-lg">
+            <p className="text-sm md:text-lg text-gray-600">
               Gérez tous les documents du système
             </p>
           </div>
-          <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-xl border border-white/20 p-6 transition-all duration-500 hover:shadow-2xl">
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+          <div className="backdrop-blur-sm bg-white/80 rounded-2xl shadow-xl border border-white/20 p-4 md:p-6 transition-all duration-500 hover:shadow-2xl">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-4 md:mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                 Tous les Documents
               </h2>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 md:gap-3">
               <select
                 value={filters.document_type}
                 onChange={(e) =>
@@ -386,7 +386,8 @@ const AdminDashboardPage = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -488,6 +489,82 @@ const AdminDashboardPage = () => {
             </table>
           </div>
 
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="bg-white rounded-2xl border border-gray-200/50 shadow-lg p-4 hover:shadow-xl transition-all duration-300"
+              >
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="px-3 py-1.5 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg text-xs font-semibold text-gray-700">
+                      {getDocumentTypeLabel(doc.document_type)}
+                    </span>
+                    <span
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 ${
+                        doc.status === "completed" ||
+                        doc.status === "confirmed"
+                          ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200"
+                          : doc.status === "failed"
+                          ? "bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200"
+                          : doc.status === "processing"
+                          ? "bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 border border-blue-200"
+                          : "bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-700 border border-yellow-200"
+                      }`}
+                    >
+                      {doc.status === "completed" ||
+                      doc.status === "confirmed" ? (
+                        <FileText className="w-3 h-3" />
+                      ) : doc.status === "failed" ? (
+                        <XCircle className="w-3 h-3" />
+                      ) : doc.status === "processing" ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3 h-3" />
+                      )}
+                      {doc.status === "completed" ? "Completed" : doc.status === "confirmed" ? "Confirmed" : doc.status}
+                    </span>
+                  </div>
+                  <div className="mb-2">
+                    <p className="font-semibold text-gray-900 text-base mb-1">
+                      {doc.user?.name || "Unknown"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {doc.user?.email || ""}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {new Date(doc.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setSelectedDocument(doc)}
+                    className="flex-1 px-3 py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Voir</span>
+                  </button>
+                  <button
+                    onClick={() => handleEdit(doc)}
+                    className="flex-1 px-3 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Modifier</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(doc)}
+                    className="flex-1 px-3 py-2.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Supprimer</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {documents.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -497,22 +574,22 @@ const AdminDashboardPage = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-8 pt-6 border-t-2 border-gray-200">
-              <p className="text-gray-700 font-semibold text-lg">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 md:mt-8 pt-4 md:pt-6 border-t-2 border-gray-200">
+              <p className="text-gray-700 font-semibold text-base md:text-lg">
                 Page <span className="text-cyan-600 font-bold">{page}</span> sur <span className="text-purple-600 font-bold">{totalPages}</span>
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-xl bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-300 disabled:hover:shadow-none"
+                  className="flex-1 sm:flex-none px-4 md:px-6 py-2.5 md:py-3 border-2 border-gray-300 rounded-xl bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-semibold text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all duration-300 disabled:hover:shadow-none"
                 >
                   Précédent
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="px-6 py-3 border-2 border-cyan-400 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-500 to-purple-600 hover:from-cyan-400 hover:via-purple-400 hover:to-purple-500 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 transition-all duration-300 disabled:hover:scale-100"
+                  className="flex-1 sm:flex-none px-4 md:px-6 py-2.5 md:py-3 border-2 border-cyan-400 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-500 to-purple-600 hover:from-cyan-400 hover:via-purple-400 hover:to-purple-500 text-white font-semibold text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:scale-105 transition-all duration-300 disabled:hover:scale-100"
                 >
                   Suivant
                 </button>
