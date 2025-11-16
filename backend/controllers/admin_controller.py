@@ -143,6 +143,7 @@ def get_admin_document(document_id):
 def update_admin_document(document_id):
     """Update a document (admin only)"""
     try:
+        from datetime import datetime
         document = Document.objects(id=document_id).first()
         if not document:
             return jsonify({'error': 'Document not found'}), 404
@@ -158,6 +159,10 @@ def update_admin_document(document_id):
             if new_status in ['pending', 'processing', 'completed', 'failed', 'confirmed']:
                 document.update_status(new_status)
         
+        # Update updated_at timestamp
+        document.updated_at = datetime.utcnow()
+        
+        # Save to database
         document.save()
         
         return jsonify({

@@ -9,6 +9,7 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import ProtectedRoute from "./router/ProtectedRoute";
 import AdminProtectedRoute from "./router/AdminProtectedRoute";
 import { DashboardTabsProvider } from "./contexts/DashboardTabsContext";
+import { AdminTabsProvider } from "./contexts/AdminTabsContext";
 
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -58,9 +59,11 @@ function App() {
         path="/admin"
         element={
           <AdminProtectedRoute>
-            <MainLayout>
-              <AdminDashboardPage />
-            </MainLayout>
+            <AdminTabsProvider>
+              <MainLayout>
+                <AdminDashboardPage />
+              </MainLayout>
+            </AdminTabsProvider>
           </AdminProtectedRoute>
         }
       />

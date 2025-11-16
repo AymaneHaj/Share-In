@@ -117,6 +117,7 @@ const DashboardPage: React.FC = () => {
   const [isEditingDocument, setIsEditingDocument] = useState(false);
   const [editDocumentData, setEditDocumentData] = useState<any>(null);
   const [documentToDelete, setDocumentToDelete] = useState<DocumentResult | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // --- PRO: Load the schema from the backend on page load ---
   useEffect(() => {
@@ -587,9 +588,16 @@ const DashboardPage: React.FC = () => {
       setIsEditingDocument(false);
       setSelectedDocument(null);
       loadUserDocuments();
+      // Show success notification
+      setNotification({ message: "Document modifié avec succès!", type: "success" });
+      // Auto-hide after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
     } catch (error) {
       console.error("Failed to update document:", error);
-      alert("Échec de la mise à jour du document");
+      // Show error notification
+      setNotification({ message: "Échec de la mise à jour du document", type: "error" });
+      // Auto-hide after 5 seconds
+      setTimeout(() => setNotification(null), 5000);
     }
   };
 
@@ -1379,40 +1387,110 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {isEditingDocument ? (
-                  <div>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveEdit();
+                    }}
+                    className="space-y-6"
+                  >
                     <div className="mb-6 p-5 bg-gradient-to-r from-cyan-50 to-purple-50 rounded-2xl border-2 border-cyan-200/50">
                       <p className="text-sm text-gray-600 mb-1 font-semibold">Type de document:</p>
                       <p className="text-lg font-bold text-gray-900">
                         {getDocumentTypeLabel(selectedDocument.document_type)}
                       </p>
                     </div>
-                    <textarea
-                      value={JSON.stringify(editDocumentData, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          const parsed = JSON.parse(e.target.value);
-                          setEditDocumentData(parsed);
-                        } catch (err) {
-                          // Invalid JSON
-                        }
-                      }}
-                      className="w-full h-96 p-6 border-2 border-gray-200 rounded-2xl font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all duration-300 bg-gradient-to-br from-gray-50 to-white shadow-inner"
-                    />
-                    <div className="flex justify-end gap-4 mt-8">
+
+                    {/* Dynamic Form Fields based on Schema */}
+                    {(() => {
+                      const docType = selectedDocument.document_type || "cin";
+                      const groups: SchemaGroup[] = fieldSchema[docType] || [];
+                      
+                      // If no schema, render all fields from editDocumentData
+                      if (groups.length === 0 && editDocumentData) {
+                        return (
+                          <div className="space-y-6">
+                            {Object.entries(editDocumentData).map(([key, value]) => (
+                              <div key={key} className="group">
+                                <label
+                                  htmlFor={`edit-${key}`}
+                                  className="block text-sm font-semibold text-gray-700 mb-2 capitalize"
+                                >
+                                  {key.replace(/_/g, " ")}
+                                </label>
+                                <input
+                                  type="text"
+                                  id={`edit-${key}`}
+                                  name={key}
+                                  value={value as string || ""}
+                                  onChange={(e) => {
+                                    setEditDocumentData((prev: any) => ({
+                                      ...prev,
+                                      [key]: e.target.value,
+                                    }));
+                                  }}
+                                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-gray-900 placeholder-gray-400 shadow-sm transition-all duration-300 hover:border-gray-300"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-8">
+                          {groups.map((group, idx) => (
+                            <div key={idx} className="bg-white/50 rounded-2xl p-6 border border-gray-200/50">
+                              <h4 className="text-lg font-bold text-gray-800 mb-6 pb-3 border-b border-gray-200">
+                                {group.title}
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {group.fields.map(({ key, label }: SchemaField) => (
+                                  <div key={key} className="group">
+                                    <label
+                                      htmlFor={`edit-${key}`}
+                                      className="block text-sm font-semibold text-gray-700 mb-2"
+                                    >
+                                      {label}
+                                    </label>
+                                    <input
+                                      type="text"
+                                      id={`edit-${key}`}
+                                      name={key}
+                                      value={editDocumentData?.[key] ?? ""}
+                                      onChange={(e) => {
+                                        setEditDocumentData((prev: any) => ({
+                                          ...prev,
+                                          [key]: e.target.value,
+                                        }));
+                                      }}
+                                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 text-gray-900 placeholder-gray-400 shadow-sm transition-all duration-300 hover:border-gray-300"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    <div className="flex justify-end gap-4 mt-8 pt-6 border-t-2 border-gray-200">
                       <button
+                        type="button"
                         onClick={() => setIsEditingDocument(false)}
                         className="px-8 py-3 border-2 border-gray-300 rounded-xl bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-semibold transition-all duration-300 hover:shadow-lg"
                       >
                         Annuler
                       </button>
                       <button
-                        onClick={handleSaveEdit}
+                        type="submit"
                         className="px-8 py-3 bg-gradient-to-r from-cyan-500 via-purple-500 to-purple-600 hover:from-cyan-400 hover:via-purple-400 hover:to-purple-500 text-white rounded-xl hover:shadow-xl transition-all duration-300 font-bold hover:scale-105"
                       >
                         Enregistrer
                       </button>
                     </div>
-                  </div>
+                  </form>
                 ) : (
                   <div>
                     <div className="mb-6 p-6 bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-2xl border-2 border-gray-200/50 shadow-inner">
@@ -1549,6 +1627,32 @@ const DashboardPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notification Toast */}
+        {notification && (
+          <div className="fixed top-4 right-4 z-[100] animate-[slideIn_0.3s_ease-out]">
+            <div
+              className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border-2 backdrop-blur-sm min-w-[300px] max-w-md transform transition-all duration-300 ${
+                notification.type === "success"
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-800"
+                  : "bg-gradient-to-r from-red-50 to-rose-50 border-red-200 text-red-800"
+              }`}
+            >
+              {notification.type === "success" ? (
+                <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-green-600" />
+              ) : (
+                <AlertTriangle className="w-6 h-6 flex-shrink-0 text-red-600" />
+              )}
+              <p className="font-semibold text-base flex-1">{notification.message}</p>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-2 text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
             </div>
           </div>
         )}

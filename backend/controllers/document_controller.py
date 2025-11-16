@@ -337,6 +337,7 @@ def delete_user_document(document_id):
 def update_user_document_data(document_id):
     """Update document extracted data (user can only update their own documents)"""
     try:
+        from datetime import datetime
         user = getattr(request, 'current_user', None)
         if not user:
             return jsonify({'error': 'User not authenticated'}), 401
@@ -359,6 +360,10 @@ def update_user_document_data(document_id):
             if new_status in ['pending', 'processing', 'completed', 'failed', 'confirmed']:
                 document.update_status(new_status)
         
+        # Update updated_at timestamp
+        document.updated_at = datetime.utcnow()
+        
+        # Save to database
         document.save()
         
         return jsonify({
