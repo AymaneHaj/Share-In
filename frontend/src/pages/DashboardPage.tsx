@@ -95,9 +95,6 @@ const DashboardPage: React.FC = () => {
   const [previewVerso, setPreviewVerso] = useState<string | null>(null);
   const [isDraggingVerso, setIsDraggingVerso] = useState(false);
 
-  // State for upload source modal (camera or file) - only used on desktop
-  const [showUploadSourceModal, setShowUploadSourceModal] = useState(false);
-  const [uploadSourceSide, setUploadSourceSide] = useState<"single" | "recto" | "verso">("single");
 
   // Detect if device is mobile
   const isMobileDevice = () => {
@@ -362,7 +359,6 @@ const DashboardPage: React.FC = () => {
     setError("");
     if (e.target.files && e.target.files[0]) {
       await processFile(e.target.files[0], side);
-      setShowUploadSourceModal(false);
     }
     e.target.value = "";
   };
@@ -725,7 +721,6 @@ const DashboardPage: React.FC = () => {
                           capture="environment"
                           onChange={(e) => {
                             handleFileSelect(e, "recto");
-                            setShowUploadSourceModal(false);
                           }}
                           className="hidden"
                           id="camera-upload-recto"
@@ -736,7 +731,6 @@ const DashboardPage: React.FC = () => {
                           accept="image/*,.heic,.heif"
                           onChange={(e) => {
                             handleFileSelect(e, "recto");
-                            setShowUploadSourceModal(false);
                           }}
                           className="hidden"
                           id="file-upload-recto"
@@ -744,16 +738,10 @@ const DashboardPage: React.FC = () => {
                         {!uploadedFileRecto ? (
                           <button
                             onClick={() => {
-                              if (isMobileDevice()) {
-                                // On mobile, directly open the native file picker (gallery)
-                                const fileInput = document.getElementById("file-upload-recto") as HTMLInputElement;
-                                if (fileInput) {
-                                  fileInput.click();
-                                }
-                              } else {
-                                // On desktop, show modal to choose between camera and file
-                                setUploadSourceSide("recto");
-                                setShowUploadSourceModal(true);
+                              // On desktop and mobile, directly open the file picker
+                              const fileInput = document.getElementById("file-upload-recto") as HTMLInputElement;
+                              if (fileInput) {
+                                fileInput.click();
                               }
                             }}
                             className="cursor-pointer w-full"
@@ -803,7 +791,6 @@ const DashboardPage: React.FC = () => {
                           capture="environment"
                           onChange={(e) => {
                             handleFileSelect(e, "verso");
-                            setShowUploadSourceModal(false);
                           }}
                           className="hidden"
                           id="camera-upload-verso"
@@ -814,7 +801,6 @@ const DashboardPage: React.FC = () => {
                           accept="image/*,.heic,.heif"
                           onChange={(e) => {
                             handleFileSelect(e, "verso");
-                            setShowUploadSourceModal(false);
                           }}
                           className="hidden"
                           id="file-upload-verso"
@@ -822,16 +808,10 @@ const DashboardPage: React.FC = () => {
                         {!uploadedFileVerso ? (
                           <button
                             onClick={() => {
-                              if (isMobileDevice()) {
-                                // On mobile, directly open the native file picker (gallery)
-                                const fileInput = document.getElementById("file-upload-verso") as HTMLInputElement;
-                                if (fileInput) {
-                                  fileInput.click();
-                                }
-                              } else {
-                                // On desktop, show modal to choose between camera and file
-                                setUploadSourceSide("verso");
-                                setShowUploadSourceModal(true);
+                              // On desktop and mobile, directly open the file picker
+                              const fileInput = document.getElementById("file-upload-verso") as HTMLInputElement;
+                              if (fileInput) {
+                                fileInput.click();
                               }
                             }}
                             className="cursor-pointer w-full"
@@ -886,7 +866,6 @@ const DashboardPage: React.FC = () => {
                       capture="environment"
                       onChange={(e) => {
                         handleFileSelect(e, "single");
-                        setShowUploadSourceModal(false);
                       }}
                       className="hidden"
                       id="camera-upload"
@@ -897,7 +876,6 @@ const DashboardPage: React.FC = () => {
                       accept="image/*,.heic,.heif"
                       onChange={(e) => {
                         handleFileSelect(e, "single");
-                        setShowUploadSourceModal(false);
                       }}
                       className="hidden"
                       id="file-upload"
@@ -905,16 +883,10 @@ const DashboardPage: React.FC = () => {
                     {!uploadedFile ? (
                       <button
                         onClick={() => {
-                          if (isMobileDevice()) {
-                            // On mobile, directly open the native file picker (gallery)
-                            const fileInput = document.getElementById("file-upload") as HTMLInputElement;
-                            if (fileInput) {
-                              fileInput.click();
-                            }
-                          } else {
-                            // On desktop, show modal to choose between camera and file
-                            setUploadSourceSide("single");
-                            setShowUploadSourceModal(true);
+                          // On desktop and mobile, directly open the file picker
+                          const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+                          if (fileInput) {
+                            fileInput.click();
                           }
                         }}
                         className="cursor-pointer w-full"
@@ -1565,71 +1537,6 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Upload Source Modal - Only for desktop (mobile uses native file picker directly) */}
-        {showUploadSourceModal && !isMobileDevice() && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl max-w-md w-full border-2 border-gray-200/50">
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-600 via-purple-600 to-purple-700 bg-clip-text text-transparent">
-                    Choisir la source
-                  </h3>
-                  <button
-                    onClick={() => setShowUploadSourceModal(false)}
-                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-all"
-                  >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                </div>
-                <p className="text-gray-600 mb-6 text-center">
-                  Comment souhaitez-vous ajouter l'image ?
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    onClick={() => {
-                      const cameraId = uploadSourceSide === "recto" 
-                        ? "camera-upload-recto" 
-                        : uploadSourceSide === "verso"
-                        ? "camera-upload-verso"
-                        : "camera-upload";
-                      const cameraInput = document.getElementById(cameraId) as HTMLInputElement;
-                      if (cameraInput) {
-                        cameraInput.click();
-                      }
-                    }}
-                    className="flex-1 flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-300 rounded-2xl hover:border-cyan-400 hover:shadow-lg transition-all group"
-                  >
-                    <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Camera className="w-8 h-8 text-white" />
-                    </div>
-                    <span className="font-semibold text-gray-900">Prendre une photo</span>
-                    <span className="text-sm text-gray-600 text-center">Utiliser la caméra</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const fileId = uploadSourceSide === "recto" 
-                        ? "file-upload-recto" 
-                        : uploadSourceSide === "verso"
-                        ? "file-upload-verso"
-                        : "file-upload";
-                      const fileInput = document.getElementById(fileId) as HTMLInputElement;
-                      if (fileInput) {
-                        fileInput.click();
-                      }
-                    }}
-                    className="flex-1 flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-2xl hover:border-purple-400 hover:shadow-lg transition-all group"
-                  >
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <ImageIcon className="w-8 h-8 text-white" />
-                    </div>
-                    <span className="font-semibold text-gray-900">Choisir un fichier</span>
-                    <span className="text-sm text-gray-600 text-center">Depuis la galerie</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Notification Toast */}
         {notification && (
